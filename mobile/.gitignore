@@ -1,0 +1,46 @@
+# ─── Flutter / Dart ────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# ─── Generated files ───────────────────────────────────────────
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# ─── Android ───────────────────────────────────────────────────
+**/android/local.properties
+**/android/.gradle/
+**/android/key.properties
+**/android/app/google-services.json
+**/android/app/release/
+
+# ─── iOS ───────────────────────────────────────────────────────
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/Generated.xcconfig
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/GoogleService-Info.plist
+
+# ─── Environment / Secrets ─────────────────────────────────────
+.env
+**/.env
+**/secrets/
+google-services.json
+GoogleService-Info.plist
+
+# ─── macOS ─────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+
+# ─── IDE ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+
+# ─── Coverage ──────────────────────────────────────────────────
+coverage/
