@@ -103,11 +103,9 @@ class OnboardingScreen extends ConsumerWidget {
 
               const SizedBox(height: 16),
 
-              // Staff login
+              // Staff / Case Officer entry (UI demo — static cases)
               TextButton(
-                onPressed: () {
-                  // TODO: Navigate to Firebase-based staff login
-                },
+                onPressed: () => context.go(AppRoutes.officerHome),
                 child: Text(
                   'Staff / NGO / Officer Login',
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 13),

@@ -9,6 +9,8 @@ import '../../presentation/screens/cases/report_case_screen.dart';
 import '../../presentation/screens/cases/case_detail_screen.dart';
 import '../../presentation/screens/legal_aid/legal_aid_screen.dart';
 import '../../presentation/screens/dashboard/dashboard_screen.dart';
+import '../../presentation/screens/officer/officer_home_screen.dart';
+import '../../presentation/screens/officer/officer_case_detail_screen.dart';
 
 /// Named route constants
 class AppRoutes {
@@ -22,6 +24,8 @@ class AppRoutes {
   static const caseDetail = '/cases/:id';
   static const legalAid = '/legal-aid';
   static const dashboard = '/dashboard';
+  static const officerHome = '/officer';
+  static const officerCaseDetail = '/officer/cases/:id';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -66,6 +70,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.dashboard,
         builder: (context, state) => const DashboardScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.officerHome,
+        builder: (context, state) => const OfficerHomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.officerCaseDetail,
+        builder: (context, state) => OfficerCaseDetailScreen(
+          caseId: state.pathParameters['id']!,
+        ),
       ),
     ],
   );
