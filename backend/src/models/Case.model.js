@@ -21,7 +21,7 @@ const timelineEventSchema = new mongoose.Schema(
 
 const caseSchema = new mongoose.Schema(
   {
-    // Auto-generated public reference (e.g., JN-2026-00123)
+    // Auto-generated public reference (e.g., CASE-2026-8942)
     referenceNumber: {
       type: String,
       unique: true,
@@ -59,7 +59,7 @@ const caseSchema = new mongoose.Schema(
 
     incidentDate: {
       type: Date,
-      required: true,
+      default: Date.now,
     },
 
     location: {
@@ -95,32 +95,29 @@ const caseSchema = new mongoose.Schema(
       default: 'medium',
     },
 
-    // Reporter — can be anonymous
+    // Reporter — can be anonymous or registered user
     reportedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      default: null,
     },
     isAnonymous: {
       type: Boolean,
       default: true,
     },
 
-    // Assigned case officer
     assignedOfficer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
     },
 
-    // Linked NGO/organization
     assignedOrganization: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
       default: null,
     },
 
-    // Evidence files
     evidence: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -128,10 +125,8 @@ const caseSchema = new mongoose.Schema(
       },
     ],
 
-    // Status history
     timeline: [timelineEventSchema],
 
-    // Internal notes by officers (not visible to reporter)
     internalNotes: [
       {
         note: String,
@@ -140,7 +135,6 @@ const caseSchema = new mongoose.Schema(
       },
     ],
 
-    // Feedback visible to reporter
     publicUpdates: [
       {
         message: String,
@@ -158,9 +152,18 @@ const caseSchema = new mongoose.Schema(
   }
 );
 
-// Geospatial index for hotspot mapping
+// Auto-generate unique Reference Number before validation
+caseSchema.pre('validate', function (next) {
+  if (!this.referenceNumber) {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const year = new Date().getFullYear();
+    this.referenceNumber = `CASE-${year}-${randomSuffix}`;
+  }
+  next();
+});
+
+// Indexes
 caseSchema.index({ 'location.coordinates': '2dsphere' });
-// Text index for search
 caseSchema.index({ title: 'text', description: 'text' });
 
 module.exports = mongoose.model('Case', caseSchema);

@@ -98,6 +98,7 @@ const updateCaseStatus = async (id, { status, note }, updatedBy) => {
     throw err;
   }
 
+  const previousStatus = caseDoc.status; // capture BEFORE mutation
   caseDoc.status = status;
   caseDoc.timeline.push({ status, note, updatedBy: updatedBy._id });
   await caseDoc.save();
@@ -107,7 +108,7 @@ const updateCaseStatus = async (id, { status, note }, updatedBy) => {
     performedBy: updatedBy._id,
     targetResource: 'Case',
     targetId: caseDoc._id,
-    metadata: { previousStatus: caseDoc.status, newStatus: status },
+    metadata: { previousStatus, newStatus: status },
   });
 
   return caseDoc;

@@ -71,7 +71,8 @@ const getCaseById = async (req, res, next) => {
     if (!caseDoc) return sendNotFound(res, 'Case not found');
 
     // Anonymous reporters can only see their own cases (without internal notes)
-    const isOwner = caseDoc.reportedBy._id.toString() === req.user._id.toString();
+    const reporterId = caseDoc.reportedBy?._id?.toString();
+    const isOwner = reporterId && reporterId === req.user._id.toString();
     const isStaff = ['officer', 'admin'].includes(req.user.role);
 
     if (!isOwner && !isStaff) {

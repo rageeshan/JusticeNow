@@ -17,17 +17,20 @@ const authenticate = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     // First, try Firebase token verification (for staff accounts)
-    try {
-      const decoded = await admin.auth().verifyIdToken(token);
-      const user = await User.findOne({ firebaseUid: decoded.uid, isActive: true });
-      if (!user) {
-        return sendUnauthorized(res, 'User account not found or deactivated');
+    // Only attempt if Firebase Admin was successfully initialized
+    if (admin.apps.length > 0) {
+      try {
+        const decoded = await admin.auth().verifyIdToken(token);
+        const user = await User.findOne({ firebaseUid: decoded.uid, isActive: true });
+        if (!user) {
+          return sendUnauthorized(res, 'User account not found or deactivated');
+        }
+        req.user = user;
+        req.authType = 'firebase';
+        return next();
+      } catch {
+        // Not a Firebase token — try JWT (anonymous/citizen)
       }
-      req.user = user;
-      req.authType = 'firebase';
-      return next();
-    } catch {
-      // Not a Firebase token — try JWT (anonymous/citizen)
     }
 
     // Try JWT verification

@@ -8,6 +8,8 @@ import '../../presentation/screens/cases/my_cases_screen.dart';
 import '../../presentation/screens/cases/report_case_screen.dart';
 import '../../presentation/screens/cases/case_detail_screen.dart';
 import '../../presentation/screens/legal_aid/legal_aid_screen.dart';
+import '../../presentation/screens/legal_aid/counsel_login_screen.dart';
+import '../../presentation/screens/legal_aid/counsel_dashboard_screen.dart';
 import '../../presentation/screens/dashboard/dashboard_screen.dart';
 
 /// Named route constants
@@ -68,15 +70,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const DashboardScreen(),
       ),
 
-      // Example AppRouter snippet in app_router.dart
       GoRoute(
-         path: '/counsel-login',
-         builder: (context, state) => const CounselLoginScreen(),
-        ),
-       GoRoute(
+        path: '/counsel-login',
+        builder: (context, state) => const CounselLoginScreen(),
+      ),
+      GoRoute(
         path: '/counsel-dashboard',
         builder: (context, state) => const CounselDashboardScreen(),
-       ),
+      ),
     ],
   );
 });
