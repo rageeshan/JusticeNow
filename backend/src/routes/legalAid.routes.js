@@ -1,20 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const legalAidController = require('../controllers/legalAid.controller');
-const { authenticate, authorize } = require('../middleware/auth.middleware');
+const {
+  registerCounsel,
+  loginCounsel,
+  getConsultationRequests,
+  updateConsultationStatus,
+  updateAvailability
+} = require('../controllers/legalAid.controller');
 
-// GET  /api/legal-aid/organizations   — Public (optional auth)
-router.get('/organizations', legalAidController.getOrganizations);
+// Authentication routes
+router.post('/register', registerCounsel);
+router.post('/login', loginCounsel);
 
-// GET  /api/legal-aid/organizations/:id — Public
-router.get('/organizations/:id', legalAidController.getOrganizationById);
+// Consultation & Dashboard routes
+router.get('/requests', getConsultationRequests);
+router.patch('/requests/:requestId/status', updateConsultationStatus);
 
-// POST /api/legal-aid/organizations   — Admin only
-router.post(
-  '/organizations',
-  authenticate,
-  authorize('admin'),
-  legalAidController.createOrganization
-);
+// Profile & Availability routes
+router.patch('/availability', updateAvailability);
 
 module.exports = router;

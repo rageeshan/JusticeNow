@@ -67,6 +67,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.dashboard,
         builder: (context, state) => const DashboardScreen(),
       ),
+
+      // Example AppRouter snippet in app_router.dart
+      GoRoute(
+         path: '/counsel-login',
+         builder: (context, state) => const CounselLoginScreen(),
+        ),
+       GoRoute(
+        path: '/counsel-dashboard',
+        builder: (context, state) => const CounselDashboardScreen(),
+       ),
     ],
   );
 });

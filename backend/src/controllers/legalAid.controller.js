@@ -1,72 +1,101 @@
-const Organization = require('../models/Organization.model');
-const { sendSuccess, sendCreated, sendNotFound } = require('../utils/response.util');
+const User = require('../models/User.model');
+const Consultation = require('../models/Consultation.model');
 
-/**
- * GET /api/legal-aid/organizations
- * List verified NGOs and legal practitioners
- */
-const getOrganizations = async (req, res, next) => {
+// 1. Lawyer / Legal Aid Registration
+exports.registerCounsel = async (req, res) => {
   try {
-    const { type, specialization, country, search, page = 1, limit = 20 } = req.query;
-    const query = { isActive: true, isVerified: true };
+    const { fullName, email, specialization, district, barId, password } = req.body;
+    
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ success: false, message: 'Email address already registered' });
+    }
 
-    if (type) query.type = type;
-    if (specialization) query.specializations = specialization;
-    if (country) query['location.country'] = country;
-    if (search) query.$text = { $search: search };
-
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const [orgs, total] = await Promise.all([
-      Organization.find(query)
-        .sort({ casesHandled: -1, name: 1 })
-        .skip(skip)
-        .limit(parseInt(limit))
-        .select('-members'),
-      Organization.countDocuments(query),
-    ]);
-
-    return sendSuccess(
-      res,
-      {
-        organizations: orgs,
-        pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) },
-      },
-      'Organizations retrieved'
-    );
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * GET /api/legal-aid/organizations/:id
- * Get a single organization's details
- */
-const getOrganizationById = async (req, res, next) => {
-  try {
-    const org = await Organization.findOne({
-      _id: req.params.id,
-      isActive: true,
-      isVerified: true,
+    user = new User({
+      fullName,
+      email,
+      password, // Note: Production වලදී bcrypt මඟින් hash කළ යුතුය
+      role: 'lawyer',
+      specialization,
+      district,
+      barId,
+      isVerified: false
     });
-    if (!org) return sendNotFound(res, 'Organization not found');
-    return sendSuccess(res, { organization: org }, 'Organization retrieved');
-  } catch (err) {
-    next(err);
+
+    await user.save();
+    res.status(201).json({ success: true, message: 'Counsel registered successfully for verification', data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-/**
- * POST /api/legal-aid/organizations
- * Register a new organization (admin only)
- */
-const createOrganization = async (req, res, next) => {
+// 2. Counsel Login
+exports.loginCounsel = async (req, res) => {
   try {
-    const org = await Organization.create(req.body);
-    return sendCreated(res, { organization: org }, 'Organization registered');
-  } catch (err) {
-    next(err);
+    const { emailOrBarId, password } = req.body;
+    
+    const user = await User.findOne({
+      $or: [{ email: emailOrBarId }, { barId: emailOrBarId }]
+    });
+
+    if (!user || user.password !== password) {
+      return res.status(401).json({ success: false, message: 'Invalid Credentials' });
+    }
+
+    res.status(200).json({ success: true, message: 'Login successful', data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-module.exports = { getOrganizations, getOrganizationById, createOrganization };
+// 3. Get Dashboard Stats & Consultation Requests
+exports.getConsultationRequests = async (req, res) => {
+  try {
+    const requests = await Consultation.find().sort({ createdAt: -1 });
+    const pendingCount = await Consultation.countDocuments({ status: 'Pending' });
+    const acceptedCount = await Consultation.countDocuments({ status: 'Accepted' });
+
+    res.status(200).json({
+      success: true,
+      stats: { pendingCount, acceptedCount },
+      data: requests
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 4. Update Consultation Request Status (Accept, Reject, Reschedule)
+exports.updateConsultationStatus = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { status } = req.body;
+
+    const consultation = await Consultation.findByIdAndUpdate(
+      requestId,
+      { status },
+      { new: true }
+    );
+
+    res.status(200).json({ success: true, message: `Status updated to ${status}`, data: consultation });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 5. Update Profile & Availability Slots
+exports.updateAvailability = async (req, res) => {
+  try {
+    const { userId, availabilityDays, activeTimeSlots } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { availabilityDays, activeTimeSlots },
+      { new: true }
+    );
+
+    res.status(200).json({ success: true, message: 'Availability updated successfully', data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -72,7 +72,7 @@ app.get('/api/health', (req, res) => {
 // ──────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/cases', caseRoutes);
-app.use('/api/legal-aid', legalAidRoutes);
+app.use('/api/legalaid', legalAidRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 // ──────────────────────────────────────────────

@@ -8,8 +8,7 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase — skip gracefully if not configured yet
-  // Run `flutterfire configure` in mobile/ to set up Firebase
+  // Initialize Firebase
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -26,7 +25,6 @@ Future<void> main() async {
     ),
   );
 }
-
 
 class JusticeNowApp extends ConsumerWidget {
   const JusticeNowApp({super.key});
