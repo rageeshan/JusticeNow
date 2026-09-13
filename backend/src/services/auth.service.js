@@ -27,19 +27,23 @@ const createAnonymousSession = async () => {
 };
 
 /**
- * Register a citizen with email/password
+ * Register a user with email/password, name and role
  */
-const registerCitizen = async ({ email, password }) => {
+const registerCitizen = async ({ email, password, fullName, role }) => {
   const existing = await User.findOne({ email });
   if (existing) {
     const err = new Error('Email already in use');
     err.statusCode = 409;
     throw err;
   }
+  // Default to citizen if no valid role provided
+  const validRoles = ['citizen', 'police_officer', 'lawyer', 'admin'];
+  const userRole = validRoles.includes(role) ? role : 'citizen';
   const user = await User.create({
     email,
     passwordHash: password, // pre-save hook hashes it
-    role: 'citizen',
+    role: userRole,
+    profile: { fullName: fullName || null },
   });
   const token = generateToken(user._id);
   await AuditLog.create({
@@ -55,7 +59,7 @@ const registerCitizen = async ({ email, password }) => {
  * Login citizen with email/password
  */
 const loginCitizen = async ({ email, password }) => {
-  const user = await User.findOne({ email, role: { $in: ['citizen'] } });
+  const user = await User.findOne({ email, role: { $in: ['citizen', 'police_officer', 'lawyer', 'admin'] } });
   if (!user || !(await user.comparePassword(password))) {
     const err = new Error('Invalid email or password');
     err.statusCode = 401;
@@ -84,7 +88,7 @@ const verifyFirebaseAndGetUser = async (firebaseToken) => {
     user = await User.create({
       email: decoded.email,
       firebaseUid: decoded.uid,
-      role: 'ngo', // Default role; admin can promote to officer/admin
+      role: 'lawyer', // Default role for Firebase-authenticated staff
       isVerified: decoded.email_verified || false,
       profile: {
         fullName: decoded.name || null,

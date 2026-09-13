@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ['anonymous', 'citizen', 'ngo', 'legal_practitioner', 'officer', 'admin'],
+      enum: ['anonymous', 'citizen', 'police_officer', 'lawyer', 'admin'],
       default: 'anonymous',
     },
 
