@@ -13,13 +13,24 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _obscurePassword = true;
+  String _selectedRole = 'citizen';
+
+  // Role options matching backend enum
+  static const Map<String, String> _roleLabels = {
+    'citizen': 'Citizen',
+    'police_officer': 'Police Officer',
+    'lawyer': 'Lawyer',
+    'admin': 'Admin',
+  };
 
   @override
   void dispose() {
+    _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
@@ -28,7 +39,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(authProvider.notifier).register(_emailCtrl.text.trim(), _passwordCtrl.text);
+    await ref.read(authProvider.notifier).register(
+      _emailCtrl.text.trim(),
+      _passwordCtrl.text,
+      fullName: _nameCtrl.text.trim(),
+      role: _selectedRole,
+    );
     if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
       context.go(AppRoutes.myCases);
     }
@@ -64,6 +80,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 40),
 
+                // Full Name
+                TextFormField(
+                  controller: _nameCtrl,
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name',
+                    prefixIcon: Icon(Icons.person_outline, color: AppColors.textMuted),
+                  ),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Name is required' : null,
+                ),
+                const SizedBox(height: 16),
+
+                // Email
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
@@ -77,6 +107,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                // Role Dropdown
+                DropdownButtonFormField<String>(
+                  value: _selectedRole,
+                  dropdownColor: AppColors.surface,
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  decoration: const InputDecoration(
+                    labelText: 'Role',
+                    prefixIcon: Icon(Icons.badge_outlined, color: AppColors.textMuted),
+                  ),
+                  items: _roleLabels.entries.map((e) {
+                    return DropdownMenuItem(
+                      value: e.key,
+                      child: Text(e.value),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    if (v != null) setState(() => _selectedRole = v);
+                  },
+                  validator: (v) => v == null ? 'Please select a role' : null,
+                ),
+                const SizedBox(height: 16),
+
+                // Password
                 TextFormField(
                   controller: _passwordCtrl,
                   obscureText: _obscurePassword,
@@ -97,6 +150,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                // Confirm Password
                 TextFormField(
                   controller: _confirmCtrl,
                   obscureText: _obscurePassword,
@@ -109,6 +163,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       v != _passwordCtrl.text ? 'Passwords do not match' : null,
                 ),
 
+                // Error banner
                 if (authState.error != null) ...[
                   const SizedBox(height: 12),
                   Container(
@@ -125,6 +180,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 const SizedBox(height: 32),
 
+                // Register Button
                 ElevatedButton(
                   onPressed: authState.isLoading ? null : _submit,
                   child: authState.isLoading
