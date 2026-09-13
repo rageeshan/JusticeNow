@@ -30,7 +30,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     await ref.read(authProvider.notifier).login(_emailCtrl.text.trim(), _passwordCtrl.text);
     if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
-      context.go(AppRoutes.myCases);
+      context.go(AppRoutes.home);
     }
   }
 

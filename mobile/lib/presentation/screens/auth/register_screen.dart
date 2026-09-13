@@ -46,7 +46,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       role: _selectedRole,
     );
     if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
-      context.go(AppRoutes.myCases);
+      context.go(AppRoutes.home);
     }
   }
 
