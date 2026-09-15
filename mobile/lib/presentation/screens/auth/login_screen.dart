@@ -17,10 +17,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
-<<<<<<< HEAD
-=======
   bool _isAnonymousLoading = false;
->>>>>>> origin/feat/Human-Rights-Case-Reporting
 
   @override
   void dispose() {
@@ -33,9 +30,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     await ref.read(authProvider.notifier).login(_emailCtrl.text.trim(), _passwordCtrl.text);
     if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
-<<<<<<< HEAD
-      context.go(AppRoutes.myCases);
-=======
       context.go(AppRoutes.home);
     }
   }
@@ -48,7 +42,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (ref.read(authProvider).status == AuthStatus.authenticated) {
         context.go(AppRoutes.reportCase);
       }
->>>>>>> origin/feat/Human-Rights-Case-Reporting
     }
   }
 
@@ -167,8 +160,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ],
                 ),
-<<<<<<< HEAD
-=======
 
                 // ── Anonymous Reporting ──
                 const SizedBox(height: 24),
@@ -206,7 +197,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                 ),
->>>>>>> origin/feat/Human-Rights-Case-Reporting
               ],
             ),
           ),

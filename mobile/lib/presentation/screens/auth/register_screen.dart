@@ -13,19 +13,11 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-<<<<<<< HEAD
-=======
   final _nameCtrl = TextEditingController();
->>>>>>> origin/feat/Human-Rights-Case-Reporting
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _obscurePassword = true;
-<<<<<<< HEAD
-
-  @override
-  void dispose() {
-=======
   String _selectedRole = 'citizen';
 
   // Role options matching backend enum
@@ -39,7 +31,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
->>>>>>> origin/feat/Human-Rights-Case-Reporting
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
@@ -48,11 +39,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-<<<<<<< HEAD
-    await ref.read(authProvider.notifier).register(_emailCtrl.text.trim(), _passwordCtrl.text);
-    if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
-      context.go(AppRoutes.myCases);
-=======
     await ref.read(authProvider.notifier).register(
       _emailCtrl.text.trim(),
       _passwordCtrl.text,
@@ -61,7 +47,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
     if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
       context.go(AppRoutes.home);
->>>>>>> origin/feat/Human-Rights-Case-Reporting
     }
   }
 
@@ -95,8 +80,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 40),
 
-<<<<<<< HEAD
-=======
                 // Full Name
                 TextFormField(
                   controller: _nameCtrl,
@@ -111,7 +94,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 16),
 
                 // Email
->>>>>>> origin/feat/Human-Rights-Case-Reporting
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
@@ -125,8 +107,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-<<<<<<< HEAD
-=======
                 // Role Dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedRole,
@@ -150,7 +130,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 16),
 
                 // Password
->>>>>>> origin/feat/Human-Rights-Case-Reporting
                 TextFormField(
                   controller: _passwordCtrl,
                   obscureText: _obscurePassword,
@@ -171,10 +150,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-<<<<<<< HEAD
-=======
                 // Confirm Password
->>>>>>> origin/feat/Human-Rights-Case-Reporting
                 TextFormField(
                   controller: _confirmCtrl,
                   obscureText: _obscurePassword,
@@ -187,10 +163,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       v != _passwordCtrl.text ? 'Passwords do not match' : null,
                 ),
 
-<<<<<<< HEAD
-=======
                 // Error banner
->>>>>>> origin/feat/Human-Rights-Case-Reporting
                 if (authState.error != null) ...[
                   const SizedBox(height: 12),
                   Container(
@@ -207,10 +180,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 const SizedBox(height: 32),
 
-<<<<<<< HEAD
-=======
                 // Register Button
->>>>>>> origin/feat/Human-Rights-Case-Reporting
                 ElevatedButton(
                   onPressed: authState.isLoading ? null : _submit,
                   child: authState.isLoading

@@ -23,13 +23,10 @@ class MyCasesScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('My Cases'),
-<<<<<<< HEAD
-=======
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.go(AppRoutes.home),
         ),
->>>>>>> origin/feat/Human-Rights-Case-Reporting
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),

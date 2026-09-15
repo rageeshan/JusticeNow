@@ -13,11 +13,7 @@ class SplashScreen extends ConsumerWidget {
     // Listen to auth state changes and navigate accordingly
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.status == AuthStatus.authenticated) {
-<<<<<<< HEAD
-        context.go(AppRoutes.myCases);
-=======
         context.go(AppRoutes.home);
->>>>>>> origin/feat/Human-Rights-Case-Reporting
       } else if (next.status == AuthStatus.unauthenticated) {
         context.go(AppRoutes.onboarding);
       }

@@ -37,19 +37,11 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-<<<<<<< HEAD
-      await CaseRepository().createCase({
-        'title': _titleCtrl.text.trim(),
-        'description': _descCtrl.text.trim(),
-        'category': _selectedCategory,
-        'incidentDate': _incidentDate?.toIso8601String(),
-=======
       final caseData = await CaseRepository().createCase({
         'title': _titleCtrl.text.trim(),
         'description': _descCtrl.text.trim(),
         'category': _selectedCategory,
         'incidentDate': (_incidentDate ?? DateTime.now()).toIso8601String(),
->>>>>>> origin/feat/Human-Rights-Case-Reporting
         'location': {
           'city': _cityCtrl.text.trim(),
           'country': _countryCtrl.text.trim(),
@@ -57,17 +49,6 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
       });
 
       if (mounted) {
-<<<<<<< HEAD
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Case submitted successfully'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        );
-        context.pop();
-=======
         // Extract case reference from response
         final referenceNumber = caseData['referenceNumber'] ?? 'N/A';
 
@@ -139,7 +120,6 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
             ],
           ),
         );
->>>>>>> origin/feat/Human-Rights-Case-Reporting
       }
     } catch (e) {
       if (mounted) {
