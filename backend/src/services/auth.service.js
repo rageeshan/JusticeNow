@@ -27,19 +27,36 @@ const createAnonymousSession = async () => {
 };
 
 /**
+<<<<<<< HEAD
  * Register a citizen with email/password
  */
 const registerCitizen = async ({ email, password }) => {
+=======
+ * Register a user with email/password, name and role
+ */
+const registerCitizen = async ({ email, password, fullName, role }) => {
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
   const existing = await User.findOne({ email });
   if (existing) {
     const err = new Error('Email already in use');
     err.statusCode = 409;
     throw err;
   }
+<<<<<<< HEAD
   const user = await User.create({
     email,
     passwordHash: password, // pre-save hook hashes it
     role: 'citizen',
+=======
+  // Default to citizen if no valid role provided
+  const validRoles = ['citizen', 'police_officer', 'lawyer', 'admin'];
+  const userRole = validRoles.includes(role) ? role : 'citizen';
+  const user = await User.create({
+    email,
+    passwordHash: password, // pre-save hook hashes it
+    role: userRole,
+    profile: { fullName: fullName || null },
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
   });
   const token = generateToken(user._id);
   await AuditLog.create({
@@ -55,7 +72,11 @@ const registerCitizen = async ({ email, password }) => {
  * Login citizen with email/password
  */
 const loginCitizen = async ({ email, password }) => {
+<<<<<<< HEAD
   const user = await User.findOne({ email, role: { $in: ['citizen'] } });
+=======
+  const user = await User.findOne({ email, role: { $in: ['citizen', 'police_officer', 'lawyer', 'admin'] } });
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
   if (!user || !(await user.comparePassword(password))) {
     const err = new Error('Invalid email or password');
     err.statusCode = 401;
@@ -84,7 +105,11 @@ const verifyFirebaseAndGetUser = async (firebaseToken) => {
     user = await User.create({
       email: decoded.email,
       firebaseUid: decoded.uid,
+<<<<<<< HEAD
       role: 'ngo', // Default role; admin can promote to officer/admin
+=======
+      role: 'lawyer', // Default role for Firebase-authenticated staff
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
       isVerified: decoded.email_verified || false,
       profile: {
         fullName: decoded.name || null,

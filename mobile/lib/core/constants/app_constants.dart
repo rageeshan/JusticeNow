@@ -4,7 +4,11 @@ class AppConstants {
   // API
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
+<<<<<<< HEAD
     defaultValue: 'http://127.0.0.1:5000/api', // Android emulator → localhost
+=======
+    defaultValue: 'http://10.0.2.2:3000/api', // Android emulator → localhost
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
   );
 
   // Secure storage keys

@@ -37,11 +37,19 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
     setState(() => _isSubmitting = true);
 
     try {
+<<<<<<< HEAD
       await CaseRepository().createCase({
         'title': _titleCtrl.text.trim(),
         'description': _descCtrl.text.trim(),
         'category': _selectedCategory,
         'incidentDate': _incidentDate?.toIso8601String(),
+=======
+      final caseData = await CaseRepository().createCase({
+        'title': _titleCtrl.text.trim(),
+        'description': _descCtrl.text.trim(),
+        'category': _selectedCategory,
+        'incidentDate': (_incidentDate ?? DateTime.now()).toIso8601String(),
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
         'location': {
           'city': _cityCtrl.text.trim(),
           'country': _countryCtrl.text.trim(),
@@ -49,6 +57,7 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
       });
 
       if (mounted) {
+<<<<<<< HEAD
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Case submitted successfully'),
@@ -58,6 +67,79 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
           ),
         );
         context.pop();
+=======
+        // Extract case reference from response
+        final referenceNumber = caseData['referenceNumber'] ?? 'N/A';
+
+        // Show success dialog with case reference
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
+                SizedBox(width: 12),
+                Text('Case Submitted', style: TextStyle(color: AppColors.textPrimary)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your incident report has been submitted successfully.',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Case Reference',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        referenceNumber.toString(),
+                        style: const TextStyle(
+                          color: AppColors.accent,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Save this reference number to track your case.',
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  context.pop();
+                },
+                child: const Text('Done'),
+              ),
+            ],
+          ),
+        );
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
       }
     } catch (e) {
       if (mounted) {

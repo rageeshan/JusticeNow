@@ -87,10 +87,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+<<<<<<< HEAD
   Future<void> register(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final data = await _repo.register(email, password);
+=======
+  Future<void> register(String email, String password, {String? fullName, String? role}) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final data = await _repo.register(email, password, fullName: fullName, role: role);
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: data['user'] as Map<String, dynamic>,

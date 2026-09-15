@@ -15,11 +15,21 @@ class AuthRepository {
     return response.data['data'];
   }
 
+<<<<<<< HEAD
   /// Register citizen with email + password
   Future<Map<String, dynamic>> register(String email, String password) async {
     final response = await _dio.post('/auth/register', data: {
       'email': email,
       'password': password,
+=======
+  /// Register user with email, password, name and role
+  Future<Map<String, dynamic>> register(String email, String password, {String? fullName, String? role}) async {
+    final response = await _dio.post('/auth/register', data: {
+      'email': email,
+      'password': password,
+      if (fullName != null) 'fullName': fullName,
+      if (role != null) 'role': role,
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
     });
     final token = response.data['data']['token'] as String;
     await _storage.write(key: AppConstants.tokenKey, value: token);

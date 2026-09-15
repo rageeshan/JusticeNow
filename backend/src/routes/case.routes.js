@@ -12,7 +12,11 @@ router.use(authenticate);
 router.post('/', caseValidators.create, caseController.createCase);
 
 // GET  /api/cases            — Officers and admins only
+<<<<<<< HEAD
 router.get('/', authorize('officer', 'admin'), caseController.getCases);
+=======
+router.get('/', authorize('police_officer', 'admin'), caseController.getCases);
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
 
 // GET  /api/cases/my         — Self-tracking for reporters
 router.get('/my', caseController.getMyCases);
@@ -23,7 +27,11 @@ router.get('/:id', caseController.getCaseById);
 // PATCH /api/cases/:id/status — Officers and admins only
 router.patch(
   '/:id/status',
+<<<<<<< HEAD
   authorize('officer', 'admin'),
+=======
+  authorize('police_officer', 'admin'),
+>>>>>>> origin/feat/Human-Rights-Case-Reporting
   caseValidators.updateStatus,
   caseController.updateCaseStatus
 );
