@@ -1,11 +1,24 @@
+import 'dart:io';
+
 class AppConstants {
   AppConstants._();
 
   // API
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3000/api', // Android emulator → localhost
-  );
+// API
+  static final String baseUrl = _getBaseUrl();
+
+  static String _getBaseUrl() {
+    const configuredUrl = String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: '',
+    );
+
+    if (configuredUrl.isNotEmpty) return configuredUrl;
+
+    return Platform.isAndroid
+        ? 'http://10.0.2.2:3000/api'
+        : 'http://localhost:3000/api';
+  }
 
   // Secure storage keys
   static const String tokenKey = 'jn_auth_token';
