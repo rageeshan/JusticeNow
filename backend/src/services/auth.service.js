@@ -21,6 +21,8 @@ const createAnonymousSession = async () => {
   const user = await User.create({
     alias,
     role: 'anonymous',
+    isVerified: true,
+    verificationStatus: 'approved',
   });
   const token = generateToken(user._id);
   return { user, token };
@@ -36,43 +38,83 @@ const registerCitizen = async ({ email, password, fullName, role }) => {
     err.statusCode = 409;
     throw err;
   }
-  // Default to citizen if no valid role provided
-  const validRoles = ['citizen', 'police_officer', 'lawyer', 'admin'];
+
+  const validRoles = [
+    'citizen',
+    'police_officer',
+    'officer',
+    'lawyer',
+    'legal_practitioner',
+    'ngo',
+    'admin',
+  ];
   const userRole = validRoles.includes(role) ? role : 'citizen';
+
+  // Determine if role requires manual admin verification
+  const requiresApproval = [
+    'police_officer',
+    'officer',
+    'lawyer',
+    'legal_practitioner',
+    'ngo',
+  ].includes(userRole);
+
   const user = await User.create({
     email,
-    passwordHash: password, // pre-save hook hashes it
+    passwordHash: password, // Pre-save hook handles hashing
     role: userRole,
     profile: { fullName: fullName || null },
+    isVerified: !requiresApproval,
+    verificationStatus: requiresApproval ? 'pending' : 'approved',
   });
+
   const token = generateToken(user._id);
+
   await AuditLog.create({
     action: 'user.registered',
     performedBy: user._id,
     targetResource: 'User',
     targetId: user._id,
   });
+
   return { user, token };
 };
 
 /**
- * Login citizen with email/password
+ * Login user with email/password
  */
 const loginCitizen = async ({ email, password }) => {
-  const user = await User.findOne({ email, role: { $in: ['citizen', 'police_officer', 'lawyer', 'admin'] } });
+  const user = await User.findOne({ email });
   if (!user || !(await user.comparePassword(password))) {
     const err = new Error('Invalid email or password');
     err.statusCode = 401;
     throw err;
   }
+
   if (!user.isActive) {
     const err = new Error('Account deactivated');
     err.statusCode = 403;
     throw err;
   }
+
+  // Block unapproved professional accounts at login
+  if (['police_officer', 'officer', 'lawyer', 'legal_practitioner', 'ngo'].includes(user.role)) {
+    if (user.verificationStatus === 'pending') {
+      const err = new Error('Your account is pending admin approval');
+      err.statusCode = 403;
+      throw err;
+    }
+    if (user.verificationStatus === 'rejected') {
+      const err = new Error(`Account rejected: ${user.rejectionReason || 'Verification failed'}`);
+      err.statusCode = 403;
+      throw err;
+    }
+  }
+
   user.lastLogin = new Date();
   await user.save();
   const token = generateToken(user._id);
+
   return { user, token };
 };
 
@@ -84,17 +126,19 @@ const verifyFirebaseAndGetUser = async (firebaseToken) => {
   let user = await User.findOne({ firebaseUid: decoded.uid });
 
   if (!user) {
-    // First login — create account
+    // First login — create pending staff account
     user = await User.create({
       email: decoded.email,
       firebaseUid: decoded.uid,
-      role: 'lawyer', // Default role for Firebase-authenticated staff
-      isVerified: decoded.email_verified || false,
+      role: 'lawyer',
+      isVerified: false,
+      verificationStatus: 'pending',
       profile: {
         fullName: decoded.name || null,
         avatarUrl: decoded.picture || null,
       },
     });
+
     await AuditLog.create({
       action: 'user.registered_firebase',
       performedBy: user._id,
@@ -112,6 +156,7 @@ const verifyFirebaseAndGetUser = async (firebaseToken) => {
   user.lastLogin = new Date();
   await user.save();
   const token = generateToken(user._id);
+
   return { user, token };
 };
 

@@ -25,7 +25,13 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ['anonymous', 'citizen', 'police_officer', 'lawyer', 'admin'],
+      enum: [
+        'anonymous',
+        'citizen',
+        'lawyer',
+        'police_officer',
+        'admin',
+      ],
       default: 'anonymous',
     },
 
@@ -45,6 +51,19 @@ const userSchema = new mongoose.Schema(
     isVerified: {
       type: Boolean,
       default: false,
+    },
+
+    // Explicit approval lifecycle tracking
+    verificationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+
+    // Reason provided by admin if account verification is rejected
+    rejectionReason: {
+      type: String,
+      default: null,
     },
 
     isActive: {

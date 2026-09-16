@@ -15,34 +15,44 @@ const authenticate = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
+    let user = null;
 
     // First, try Firebase token verification (for staff accounts)
     try {
       const decoded = await admin.auth().verifyIdToken(token);
-      const user = await User.findOne({ firebaseUid: decoded.uid, isActive: true });
-      if (!user) {
-        return sendUnauthorized(res, 'User account not found or deactivated');
-      }
-      req.user = user;
-      req.authType = 'firebase';
-      return next();
+      user = await User.findOne({ firebaseUid: decoded.uid, isActive: true });
+      if (user) req.authType = 'firebase';
     } catch {
       // Not a Firebase token — try JWT (anonymous/citizen)
     }
 
-    // Try JWT verification
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.userId).select('-passwordHash');
-      if (!user || !user.isActive) {
-        return sendUnauthorized(res, 'User account not found or deactivated');
+    // Try JWT verification if Firebase didn't return a user
+    if (!user) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        user = await User.findById(decoded.userId).select('-passwordHash');
+        if (user && user.isActive) req.authType = 'jwt';
+      } catch {
+        return sendUnauthorized(res, 'Invalid or expired token');
       }
-      req.user = user;
-      req.authType = 'jwt';
-      return next();
-    } catch {
-      return sendUnauthorized(res, 'Invalid or expired token');
     }
+
+    if (!user || !user.isActive) {
+      return sendUnauthorized(res, 'User account not found or deactivated');
+    }
+
+    // Block pending or rejected professional accounts
+    if (['police_officer', 'officer', 'lawyer', 'legal_practitioner', 'ngo'].includes(user.role)) {
+      if (user.verificationStatus === 'pending') {
+        return sendForbidden(res, 'Your account is pending admin approval');
+      }
+      if (user.verificationStatus === 'rejected') {
+        return sendForbidden(res, `Account rejected: ${user.rejectionReason || 'Verification failed'}`);
+      }
+    }
+
+    req.user = user;
+    return next();
   } catch (error) {
     return sendUnauthorized(res, 'Authentication failed');
   }
@@ -50,7 +60,7 @@ const authenticate = async (req, res, next) => {
 
 /**
  * Middleware: Authorize by role(s)
- * Usage: authorize('admin', 'officer')
+ * Usage: authorize('admin', 'police_officer')
  */
 const authorize = (...roles) => {
   return (req, res, next) => {
@@ -74,7 +84,6 @@ const optionalAuthenticate = async (req, res, next) => {
       req.user = null;
       return next();
     }
-    // Reuse authenticate but catch errors
     await authenticate(req, res, () => next());
   } catch {
     req.user = null;

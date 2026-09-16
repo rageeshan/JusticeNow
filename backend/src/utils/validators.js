@@ -36,6 +36,18 @@ const authValidators = {
   register: [
     body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+    body('fullName').optional().trim().notEmpty().withMessage('Full name cannot be empty'),
+    body('role')
+      .optional()
+      .isIn([
+        'citizen',
+        'police_officer',
+        'officer',
+        'lawyer',
+        'legal_practitioner',
+        'ngo',
+      ])
+      .withMessage('Invalid role specified'),
     validate,
   ],
   login: [
