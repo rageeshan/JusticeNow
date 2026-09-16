@@ -25,11 +25,7 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-<<<<<<< HEAD
-      enum: ['anonymous', 'citizen', 'ngo', 'legal_practitioner', 'officer', 'admin'],
-=======
       enum: ['anonymous', 'citizen', 'police_officer', 'lawyer', 'admin'],
->>>>>>> origin/feat/Human-Rights-Case-Reporting
       default: 'anonymous',
     },
 

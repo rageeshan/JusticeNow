@@ -4,11 +4,7 @@ const analyticsController = require('../controllers/analytics.controller');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 
 // All analytics routes — officers and admins only
-<<<<<<< HEAD
-router.use(authenticate, authorize('officer', 'admin'));
-=======
 router.use(authenticate, authorize('police_officer', 'admin'));
->>>>>>> origin/feat/Human-Rights-Case-Reporting
 
 // GET /api/analytics/summary
 router.get('/summary', analyticsController.getSummary);
