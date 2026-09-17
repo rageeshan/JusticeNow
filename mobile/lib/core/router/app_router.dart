@@ -10,6 +10,7 @@ import '../../presentation/screens/cases/case_detail_screen.dart';
 import '../../presentation/screens/legal_aid/legal_aid_screen.dart';
 import '../../presentation/screens/dashboard/dashboard_screen.dart';
 import '../../presentation/screens/home/home_screen.dart';
+import '../../presentation/screens/admin/admin_verifications_screen.dart';
 
 /// Named route constants
 class AppRoutes {
@@ -24,6 +25,7 @@ class AppRoutes {
   static const caseDetail = '/cases/:id';
   static const legalAid = '/legal-aid';
   static const dashboard = '/dashboard';
+  static const adminVerifications = '/admin/verifications';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -72,6 +74,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.dashboard,
         builder: (context, state) => const DashboardScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.adminVerifications,
+        builder: (context, state) => const AdminVerificationsScreen(),
       ),
     ],
   );

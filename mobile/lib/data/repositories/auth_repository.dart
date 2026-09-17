@@ -15,17 +15,52 @@ class AuthRepository {
     return response.data['data'];
   }
 
-  /// Register user with email, password, name and role
-  Future<Map<String, dynamic>> register(String email, String password, {String? fullName, String? role}) async {
+  /// Register user with email, password, name and role-specific details
+  Future<Map<String, dynamic>> register(
+    String email,
+    String password, {
+    String? fullName,
+    String? role,
+    String? province,
+    String? district,
+    String? policeId,
+    String? lawyerId,
+  }) async {
     final response = await _dio.post('/auth/register', data: {
       'email': email,
       'password': password,
       if (fullName != null) 'fullName': fullName,
       if (role != null) 'role': role,
+      if (province != null) 'province': province,
+      if (district != null) 'district': district,
+      if (policeId != null) 'policeId': policeId,
+      if (lawyerId != null) 'lawyerId': lawyerId,
     });
-    final token = response.data['data']['token'] as String;
-    await _storage.write(key: AppConstants.tokenKey, value: token);
-    return response.data['data'];
+    final data = response.data['data'] as Map<String, dynamic>;
+    final token = data['token'] as String?;
+    if (token != null && token.isNotEmpty) {
+      await _storage.write(key: AppConstants.tokenKey, value: token);
+    }
+    return data;
+  }
+
+  /// Admin: Get users filtered by approvalStatus and/or role
+  Future<List<dynamic>> getAdminUsers({String? approvalStatus, String? role, String? search}) async {
+    final response = await _dio.get('/admin/users', queryParameters: {
+      if (approvalStatus != null && approvalStatus.isNotEmpty) 'approvalStatus': approvalStatus,
+      if (role != null && role.isNotEmpty) 'role': role,
+      if (search != null && search.isNotEmpty) 'search': search,
+    });
+    return response.data['data']['users'] as List<dynamic>;
+  }
+
+  /// Admin: Update user approval status (approved / rejected)
+  Future<Map<String, dynamic>> updateUserApprovalStatus(String userId, String status, {String? reason}) async {
+    final response = await _dio.patch('/admin/users/$userId/status', data: {
+      'status': status,
+      if (reason != null) 'reason': reason,
+    });
+    return response.data['data']['user'] as Map<String, dynamic>;
   }
 
   /// Login citizen with email + password

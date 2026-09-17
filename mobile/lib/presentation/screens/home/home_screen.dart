@@ -115,6 +115,18 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
+              // Admin: Account Verifications Portal
+              if (role == 'admin') ...[
+                _ActionCard(
+                  icon: Icons.verified_user_outlined,
+                  title: 'Account Verifications',
+                  subtitle: 'Review & verify pending officer and lawyer accounts',
+                  color: AppColors.accent,
+                  onTap: () => context.push(AppRoutes.adminVerifications),
+                ),
+                const SizedBox(height: 12),
+              ],
+
               // Dashboard — only for police officers and admins
               if (role == 'police_officer' || role == 'admin') ...[
                 _ActionCard(

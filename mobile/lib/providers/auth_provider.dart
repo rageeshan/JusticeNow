@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/repositories/auth_repository.dart';
 
@@ -5,6 +6,21 @@ import '../data/repositories/auth_repository.dart';
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
 });
+
+// ─── Registration Result ───────────────────────────────────────
+class RegisterResult {
+  final bool success;
+  final bool isPending;
+  final String? message;
+  final String? error;
+
+  const RegisterResult({
+    required this.success,
+    this.isPending = false,
+    this.message,
+    this.error,
+  });
+}
 
 // ─── Auth State ────────────────────────────────────────────────
 enum AuthStatus { unknown, authenticated, unauthenticated }
@@ -69,7 +85,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
+      String message = e.toString();
+      if (e is DioException && e.response?.data != null) {
+        final resp = e.response!.data;
+        if (resp is Map && resp['message'] != null) {
+          message = resp['message'].toString();
+        }
+      }
+      state = state.copyWith(error: message, isLoading: false);
     }
   }
 
@@ -83,21 +106,72 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
+      String message = e.toString();
+      if (e is DioException && e.response?.data != null) {
+        final resp = e.response!.data;
+        if (resp is Map && resp['message'] != null) {
+          message = resp['message'].toString();
+        }
+      }
+      state = state.copyWith(error: message, isLoading: false);
     }
   }
 
-  Future<void> register(String email, String password, {String? fullName, String? role}) async {
+  Future<RegisterResult> register(
+    String email,
+    String password, {
+    String? fullName,
+    String? role,
+    String? province,
+    String? district,
+    String? policeId,
+    String? lawyerId,
+  }) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final data = await _repo.register(email, password, fullName: fullName, role: role);
-      state = state.copyWith(
-        status: AuthStatus.authenticated,
-        user: data['user'] as Map<String, dynamic>,
-        isLoading: false,
+      final data = await _repo.register(
+        email,
+        password,
+        fullName: fullName,
+        role: role,
+        province: province,
+        district: district,
+        policeId: policeId,
+        lawyerId: lawyerId,
       );
+
+      final isPending = data['isPending'] == true;
+      if (isPending) {
+        // Pending approval: do not transition to authenticated
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          isLoading: false,
+          error: null,
+        );
+        return RegisterResult(
+          success: true,
+          isPending: true,
+          message: data['message'] as String? ??
+              'Registration submitted successfully. Your account is pending administrator verification.',
+        );
+      } else {
+        state = state.copyWith(
+          status: AuthStatus.authenticated,
+          user: data['user'] as Map<String, dynamic>?,
+          isLoading: false,
+        );
+        return const RegisterResult(success: true, isPending: false);
+      }
     } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
+      String message = e.toString();
+      if (e is DioException && e.response?.data != null) {
+        final resp = e.response!.data;
+        if (resp is Map && resp['message'] != null) {
+          message = resp['message'].toString();
+        }
+      }
+      state = state.copyWith(error: message, isLoading: false);
+      return RegisterResult(success: false, error: message);
     }
   }
 

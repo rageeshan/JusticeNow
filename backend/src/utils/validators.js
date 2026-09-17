@@ -36,6 +36,26 @@ const authValidators = {
   register: [
     body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+    body('province')
+      .if(body('role').custom((val) => !val || val === 'citizen'))
+      .trim()
+      .notEmpty()
+      .withMessage('Province is required for citizen registration'),
+    body('district')
+      .if(body('role').custom((val) => !val || val === 'citizen'))
+      .trim()
+      .notEmpty()
+      .withMessage('District is required for citizen registration'),
+    body('policeId')
+      .if(body('role').equals('police_officer'))
+      .trim()
+      .notEmpty()
+      .withMessage('Police ID is required for police officer registration'),
+    body('lawyerId')
+      .if(body('role').equals('lawyer'))
+      .trim()
+      .notEmpty()
+      .withMessage('Lawyer ID is required for lawyer registration'),
     validate,
   ],
   login: [
@@ -45,4 +65,14 @@ const authValidators = {
   ],
 };
 
-module.exports = { validate, caseValidators, authValidators };
+const adminValidators = {
+  updateStatus: [
+    param('id').isMongoId().withMessage('Invalid user ID'),
+    body('status')
+      .isIn(['approved', 'rejected'])
+      .withMessage('Status must be either approved or rejected'),
+    validate,
+  ],
+};
+
+module.exports = { validate, caseValidators, authValidators, adminValidators };

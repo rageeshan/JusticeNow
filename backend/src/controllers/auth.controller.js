@@ -20,9 +20,22 @@ const anonymousLogin = async (req, res, next) => {
  */
 const register = async (req, res, next) => {
   try {
-    const { email, password, fullName, role } = req.body;
-    const { user, token } = await authService.registerCitizen({ email, password, fullName, role });
-    return sendCreated(res, { user, token }, 'Registration successful');
+    const { email, password, fullName, role, province, district, policeId, lawyerId } = req.body;
+    const result = await authService.registerCitizen({
+      email,
+      password,
+      fullName,
+      role,
+      province,
+      district,
+      policeId,
+      lawyerId,
+    });
+    return sendCreated(
+      res,
+      { user: result.user, token: result.token, isPending: result.isPending },
+      result.message || 'Registration successful'
+    );
   } catch (err) {
     next(err);
   }

@@ -27,9 +27,9 @@ const createAnonymousSession = async () => {
 };
 
 /**
- * Register a user with email/password, name and role
+ * Register a user with email/password, name, role, and role-specific details
  */
-const registerCitizen = async ({ email, password, fullName, role }) => {
+const registerCitizen = async ({ email, password, fullName, role, province, district, policeId, lawyerId }) => {
   const existing = await User.findOne({ email });
   if (existing) {
     const err = new Error('Email already in use');
@@ -39,24 +39,49 @@ const registerCitizen = async ({ email, password, fullName, role }) => {
   // Default to citizen if no valid role provided
   const validRoles = ['citizen', 'police_officer', 'lawyer', 'admin'];
   const userRole = validRoles.includes(role) ? role : 'citizen';
+
+  const isPendingRole = ['police_officer', 'lawyer'].includes(userRole);
+  const approvalStatus = isPendingRole ? 'pending' : 'approved';
+  const isVerified = !isPendingRole;
+
   const user = await User.create({
     email,
     passwordHash: password, // pre-save hook hashes it
     role: userRole,
-    profile: { fullName: fullName || null },
+    approvalStatus,
+    isVerified,
+    profile: {
+      fullName: fullName || null,
+      province: province || null,
+      district: district || null,
+      policeId: policeId || null,
+      lawyerId: lawyerId || null,
+    },
   });
-  const token = generateToken(user._id);
+
   await AuditLog.create({
     action: 'user.registered',
     performedBy: user._id,
     targetResource: 'User',
     targetId: user._id,
   });
-  return { user, token };
+
+  // Police officers and lawyers require admin approval before accessing the platform
+  if (isPendingRole) {
+    return {
+      user,
+      token: null,
+      isPending: true,
+      message: 'Registration submitted successfully. Your account is pending administrator verification.',
+    };
+  }
+
+  const token = generateToken(user._id);
+  return { user, token, isPending: false, message: 'Registration successful' };
 };
 
 /**
- * Login citizen with email/password
+ * Login user with email/password
  */
 const loginCitizen = async ({ email, password }) => {
   const user = await User.findOne({ email, role: { $in: ['citizen', 'police_officer', 'lawyer', 'admin'] } });
@@ -70,6 +95,17 @@ const loginCitizen = async ({ email, password }) => {
     err.statusCode = 403;
     throw err;
   }
+  if (user.approvalStatus === 'pending') {
+    const err = new Error('Your account is pending administrator verification. Please wait for an admin to approve your account before signing in.');
+    err.statusCode = 403;
+    throw err;
+  }
+  if (user.approvalStatus === 'rejected') {
+    const err = new Error('Your account registration was rejected by an administrator.');
+    err.statusCode = 403;
+    throw err;
+  }
+
   user.lastLogin = new Date();
   await user.save();
   const token = generateToken(user._id);

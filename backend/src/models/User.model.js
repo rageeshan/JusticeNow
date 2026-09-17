@@ -40,6 +40,18 @@ const userSchema = new mongoose.Schema(
       phone: { type: String, default: null },
       organization: { type: String, default: null },
       avatarUrl: { type: String, default: null },
+      province: { type: String, default: null, trim: true },
+      district: { type: String, default: null, trim: true },
+      policeId: { type: String, default: null, trim: true },
+      lawyerId: { type: String, default: null, trim: true },
+    },
+
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: function () {
+        return ['police_officer', 'lawyer'].includes(this.role) ? 'pending' : 'approved';
+      },
     },
 
     isVerified: {
@@ -63,10 +75,9 @@ const userSchema = new mongoose.Schema(
 );
 
 // Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('passwordHash') || !this.passwordHash) return next();
+userSchema.pre('save', async function () {
+  if (!this.isModified('passwordHash') || !this.passwordHash) return;
   this.passwordHash = await bcrypt.hash(this.passwordHash, 12);
-  next();
 });
 
 // Compare password

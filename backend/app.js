@@ -10,6 +10,7 @@ const authRoutes = require('./src/routes/auth.routes');
 const caseRoutes = require('./src/routes/case.routes');
 const legalAidRoutes = require('./src/routes/legalAid.routes');
 const analyticsRoutes = require('./src/routes/analytics.routes');
+const adminRoutes = require('./src/routes/admin.routes');
 const { errorHandler, notFound } = require('./src/middleware/error.middleware');
 
 // Initialize Firebase Admin
@@ -74,6 +75,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/legal-aid', legalAidRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ──────────────────────────────────────────────
 // Error Handling (must be last)
