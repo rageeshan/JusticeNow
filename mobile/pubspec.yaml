@@ -39,7 +39,8 @@ dependencies:
   lottie: ^3.1.2
 
   # ─── File Picker & Camera ─────────────────────────────
-  file_picker: ^8.0.7
+  file_picker:
+    path: third_party/file_picker
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
 
