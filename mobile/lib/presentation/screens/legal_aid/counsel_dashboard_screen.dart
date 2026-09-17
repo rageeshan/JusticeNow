@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'consultation_requests_screen.dart';
 import 'manage_availability_screen.dart';
 
 class CounselDashboardScreen extends StatefulWidget {
@@ -20,10 +19,10 @@ class _CounselDashboardScreenState extends State<CounselDashboardScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.person)),
-              title: const Text('Counsel Name', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('Verified Partner'),
+            const ListTile(
+              leading: CircleAvatar(child: Icon(Icons.person)),
+              title: Text('Counsel Name', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text('Verified Partner'),
             ),
             SwitchListTile(
               title: const Text('MY AVAILABILITY STATUS'),
@@ -31,13 +30,13 @@ class _CounselDashboardScreenState extends State<CounselDashboardScreen> {
               onChanged: (val) => setState(() => isAvailable = val),
             ),
             Row(
-              children: [
+              children: const [
                 Expanded(
                   child: Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: EdgeInsets.all(16.0),
                       child: Column(
-                        children: const [
+                        children: [
                           Text('03', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                           Text('PENDING REQUESTS'),
                         ],
@@ -48,9 +47,9 @@ class _CounselDashboardScreenState extends State<CounselDashboardScreen> {
                 Expanded(
                   child: Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: EdgeInsets.all(16.0),
                       child: Column(
-                        children: const [
+                        children: [
                           Text('12', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                           Text('ACCEPTED CONSULTATIONS'),
                         ],
@@ -67,7 +66,7 @@ class _CounselDashboardScreenState extends State<CounselDashboardScreen> {
                 const Text('INCOMING CONSULTATION REQUESTS', style: TextStyle(fontWeight: FontWeight.bold)),
                 TextButton(
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ConsultationRequestsScreen()));
+                    // Navigate to Requests Screen
                   },
                   child: const Text('View All'),
                 )
@@ -79,7 +78,7 @@ class _CounselDashboardScreenState extends State<CounselDashboardScreen> {
                 subtitle: const Text('Category • Requested date & time\nCase ID: #----'),
                 trailing: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ConsultationRequestsScreen()));
+                    // Review Request action
                   },
                   child: const Text('Review Request'),
                 ),
@@ -92,10 +91,11 @@ class _CounselDashboardScreenState extends State<CounselDashboardScreen> {
         currentIndex: 0,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
-          if (index == 1) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const ConsultationRequestsScreen()));
-          } else if (index == 3) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const ManageAvailabilityScreen()));
+          if (index == 3) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ManageAvailabilityScreen()),
+            );
           }
         },
         items: const [

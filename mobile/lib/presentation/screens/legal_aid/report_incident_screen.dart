@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/constants/app_constants.dart';
-import 'dart:convert';
+
 
 class ReportIncidentScreen extends ConsumerStatefulWidget {
-  const ReportIncidentScreen({Key? key}) : super(key: key);
+  const ReportIncidentScreen({super.key});
 
   @override
   ConsumerState<ReportIncidentScreen> createState() => _ReportIncidentScreenState();
@@ -82,8 +82,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Column(
-          children: const [
+        title: const Column(
+          children: [
             Icon(Icons.check_circle_outline, color: Colors.green, size: 60),
             SizedBox(height: 12),
             Text(
