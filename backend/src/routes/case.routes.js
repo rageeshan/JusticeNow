@@ -59,14 +59,14 @@ router.get('/:id/updates', authenticate, caseController.getPublicUpdates);
 router.get('/:id', authenticate, caseController.getCaseById);
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Staff — Case Management (police_officer / admin only)
+//  Staff — Case Management (police_officer / officer / admin only)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * GET /api/cases
  * Paginated list of all cases — officers and admins only.
  */
-router.get('/', authenticate, authorize('police_officer', 'admin'), caseController.getCases);
+router.get('/', authenticate, authorize('police_officer', 'officer', 'admin'), caseController.getCases);
 
 /**
  * PATCH /api/cases/:id/status
@@ -75,7 +75,7 @@ router.get('/', authenticate, authorize('police_officer', 'admin'), caseControll
 router.patch(
   '/:id/status',
   authenticate,
-  authorize('police_officer', 'admin'),
+  authorize('police_officer', 'officer', 'admin'),
   caseValidators.updateStatus,
   caseController.updateCaseStatus
 );

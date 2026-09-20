@@ -84,7 +84,7 @@ const verifyFirebaseAndGetUser = async (firebaseToken) => {
     user = await User.create({
       email: decoded.email,
       firebaseUid: decoded.uid,
-      role: 'police_officer', // Default staff role; admin can promote to admin
+      role: 'police_officer', // Default staff role; admin can promote to officer/admin
       isVerified: decoded.email_verified || false,
       profile: {
         fullName: decoded.name || null,

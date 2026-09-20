@@ -103,7 +103,7 @@ class OnboardingScreen extends ConsumerWidget {
 
               const SizedBox(height: 16),
 
-              // Staff / Case Officer entry (UI demo — static cases)
+              // Staff / Case Officer entry
               TextButton(
                 onPressed: () => context.go(AppRoutes.officerHome),
                 child: Text(

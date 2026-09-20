@@ -28,6 +28,11 @@ const VALID_CATEGORIES = [
   'gender_based_violence',
   'labor_rights',
   'discrimination',
+  'torture',
+  'forced_disappearance',
+  'extrajudicial_killing',
+  'freedom_of_assembly',
+  'right_to_fair_trial',
   'other',
 ];
 

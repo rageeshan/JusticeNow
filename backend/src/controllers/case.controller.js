@@ -102,7 +102,7 @@ const getPublicUpdates = async (req, res, next) => {
 
     // Only the reporter or staff can view updates
     const isOwner = caseDoc.reportedBy._id.toString() === req.user._id.toString();
-    const isStaff = ['police_officer', 'admin'].includes(req.user.role);
+    const isStaff = ['police_officer', 'officer', 'admin'].includes(req.user.role);
 
     if (!isOwner && !isStaff) {
       return sendForbidden(res, 'You do not have access to this case');
@@ -145,7 +145,7 @@ const getCaseById = async (req, res, next) => {
     if (!caseDoc) return sendNotFound(res, 'Case not found');
 
     const isOwner = caseDoc.reportedBy._id.toString() === req.user._id.toString();
-    const isStaff = ['police_officer', 'admin'].includes(req.user.role);
+    const isStaff = ['police_officer', 'officer', 'admin'].includes(req.user.role);
 
     if (!isOwner && !isStaff) {
       return sendForbidden(res, 'You do not have access to this case');
@@ -172,7 +172,7 @@ const getCaseById = async (req, res, next) => {
 
 /**
  * GET /api/cases
- * Paginated case list — police_officer and admin only
+ * Paginated case list — police_officer, officer and admin only
  */
 const getCases = async (req, res, next) => {
   try {
@@ -193,7 +193,7 @@ const getCases = async (req, res, next) => {
 
 /**
  * PATCH /api/cases/:id/status
- * Update case status — police_officer and admin only
+ * Update case status — police_officer, officer and admin only
  */
 const updateCaseStatus = async (req, res, next) => {
   try {
@@ -223,7 +223,7 @@ const uploadEvidence = async (req, res, next) => {
 
     // Only case owner or staff can upload evidence
     const isOwner = caseDoc.reportedBy._id.toString() === req.user._id.toString();
-    const isStaff = ['police_officer', 'admin'].includes(req.user.role);
+    const isStaff = ['police_officer', 'officer', 'admin'].includes(req.user.role);
     if (!isOwner && !isStaff) {
       return sendForbidden(res, 'You cannot upload evidence to this case');
     }
