@@ -44,14 +44,13 @@ const caseSchema = new mongoose.Schema(
     category: {
       type: String,
       enum: [
+        'police_brutality',
         'arbitrary_detention',
-        'torture',
-        'forced_disappearance',
-        'extrajudicial_killing',
-        'discrimination',
+        'forced_displacement',
         'freedom_of_expression',
-        'freedom_of_assembly',
-        'right_to_fair_trial',
+        'gender_based_violence',
+        'labor_rights',
+        'discrimination',
         'other',
       ],
       required: true,
@@ -104,6 +103,19 @@ const caseSchema = new mongoose.Schema(
     isAnonymous: {
       type: Boolean,
       default: true,
+    },
+
+    // Optional contact info for non-anonymous reporters (never shown publicly)
+    contactName: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    contactEmail: {
+      type: String,
+      default: null,
+      lowercase: true,
+      trim: true,
     },
 
     // Assigned case officer

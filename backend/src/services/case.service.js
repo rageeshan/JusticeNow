@@ -1,9 +1,13 @@
 const Case = require('../models/Case.model');
 const AuditLog = require('../models/AuditLog.model');
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * Generate a unique human-readable reference number
- * Format: JN-YYYY-XXXXX
+ * Format: JN-YYYY-XXXXX  e.g. JN-2026-00042
  */
 const generateReferenceNumber = async () => {
   const year = new Date().getFullYear();
@@ -12,39 +16,60 @@ const generateReferenceNumber = async () => {
   return `JN-${year}-${padded}`;
 };
 
+// Citizen-safe projection — strips internal officer notes
+const CITIZEN_PROJECTION = '-internalNotes';
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Create
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * Create a new case report
+ * @param {Object} data   - Request body (title, description, category, etc.)
+ * @param {Object} user   - Authenticated user (req.user)
  */
-const createCase = async (data, reportedBy) => {
+const createCase = async (data, user) => {
   const referenceNumber = await generateReferenceNumber();
+  const isAnonymous = user.role === 'anonymous';
 
   const newCase = await Case.create({
-    ...data,
+    title: data.title,
+    description: data.description,
+    category: data.category,
+    incidentDate: data.incidentDate,
+    location: data.location || {},
     referenceNumber,
-    reportedBy: reportedBy._id,
-    isAnonymous: reportedBy.role === 'anonymous',
+    reportedBy: user._id,
+    isAnonymous,
+    // Only persist contact details for non-anonymous reporters
+    contactName: !isAnonymous ? (data.contactName || null) : null,
+    contactEmail: !isAnonymous ? (data.contactEmail || null) : null,
     timeline: [
       {
         status: 'submitted',
         note: 'Case submitted by reporter',
-        updatedBy: reportedBy._id,
+        updatedBy: user._id,
       },
     ],
   });
 
   await AuditLog.create({
     action: 'case.created',
-    performedBy: reportedBy._id,
+    performedBy: user._id,
     targetResource: 'Case',
     targetId: newCase._id,
-    metadata: { referenceNumber, category: data.category },
+    metadata: { referenceNumber, category: data.category, isAnonymous },
   });
 
   return newCase;
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Read — Officer / Admin
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Get paginated list of cases (for officers/admins)
+ * Get paginated list of ALL cases (officers/admins only)
  */
 const getCases = async ({ page = 1, limit = 20, status, category, priority, search } = {}) => {
   const query = { isDeleted: false };
@@ -67,17 +92,34 @@ const getCases = async ({ page = 1, limit = 20, status, category, priority, sear
 
   return {
     cases,
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit),
-    },
+    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
   };
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Read — Citizen
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Get a single case by ID
+ * Get cases reported by a specific user (citizen self-tracking)
+ * Internal notes are NEVER sent to the citizen.
+ */
+const getCasesByReporter = async (userId, { page = 1, limit = 20 } = {}) => {
+  const query = { reportedBy: userId, isDeleted: false };
+  const skip = (page - 1) * limit;
+  const [cases, total] = await Promise.all([
+    Case.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select(CITIZEN_PROJECTION),
+    Case.countDocuments(query),
+  ]);
+  return { cases, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
+};
+
+/**
+ * Get a single case by MongoDB ObjectId
  */
 const getCaseById = async (id) => {
   return Case.findOne({ _id: id, isDeleted: false })
@@ -88,7 +130,22 @@ const getCaseById = async (id) => {
 };
 
 /**
- * Update case status with timeline event
+ * Get a single case by its human-readable reference number
+ * e.g. JN-2024-0042 — used by citizens tracking from the mobile app.
+ * Internal notes are stripped; only publicUpdates are returned.
+ */
+const getCaseByReferenceNumber = async (refNum) => {
+  return Case.findOne({ referenceNumber: refNum.toUpperCase(), isDeleted: false })
+    .select(CITIZEN_PROJECTION)
+    .populate('evidence', 'originalName fileType sizeBytes createdAt');
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Update — Officer / Admin
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Update case status with a timeline entry (officer/admin only)
  */
 const updateCaseStatus = async (id, { status, note }, updatedBy) => {
   const caseDoc = await Case.findOne({ _id: id, isDeleted: false });
@@ -98,8 +155,9 @@ const updateCaseStatus = async (id, { status, note }, updatedBy) => {
     throw err;
   }
 
+  const prevStatus = caseDoc.status;
   caseDoc.status = status;
-  caseDoc.timeline.push({ status, note, updatedBy: updatedBy._id });
+  caseDoc.timeline.push({ status, note: note || '', updatedBy: updatedBy._id });
   await caseDoc.save();
 
   await AuditLog.create({
@@ -107,23 +165,17 @@ const updateCaseStatus = async (id, { status, note }, updatedBy) => {
     performedBy: updatedBy._id,
     targetResource: 'Case',
     targetId: caseDoc._id,
-    metadata: { previousStatus: caseDoc.status, newStatus: status },
+    metadata: { previousStatus: prevStatus, newStatus: status, note },
   });
 
   return caseDoc;
 };
 
-/**
- * Get cases reported by a specific user (for self-tracking)
- */
-const getCasesByReporter = async (userId, { page = 1, limit = 20 } = {}) => {
-  const query = { reportedBy: userId, isDeleted: false };
-  const skip = (page - 1) * limit;
-  const [cases, total] = await Promise.all([
-    Case.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).select('-internalNotes'),
-    Case.countDocuments(query),
-  ]);
-  return { cases, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
+module.exports = {
+  createCase,
+  getCases,
+  getCaseById,
+  getCaseByReferenceNumber,
+  getCasesByReporter,
+  updateCaseStatus,
 };
-
-module.exports = { createCase, getCases, getCaseById, updateCaseStatus, getCasesByReporter };

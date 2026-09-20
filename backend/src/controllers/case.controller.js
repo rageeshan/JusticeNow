@@ -8,24 +8,171 @@ const {
   sendCreated,
   sendNotFound,
   sendForbidden,
+  sendError,
 } = require('../utils/response.util');
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Citizen — Case Reporting
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * POST /api/cases
- * Submit a new case report
+ * Submit a new incident report (any authenticated user — anonymous or citizen)
  */
 const createCase = async (req, res, next) => {
   try {
     const caseDoc = await caseService.createCase(req.body, req.user);
-    return sendCreated(res, { case: caseDoc }, 'Case submitted successfully');
+    return sendCreated(
+      res,
+      {
+        case: {
+          _id: caseDoc._id,
+          referenceNumber: caseDoc.referenceNumber,
+          status: caseDoc.status,
+          category: caseDoc.category,
+          title: caseDoc.title,
+          isAnonymous: caseDoc.isAnonymous,
+          createdAt: caseDoc.createdAt,
+        },
+      },
+      `Case submitted successfully. Your reference number is ${caseDoc.referenceNumber}`
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Citizen — Case Tracking
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/cases/my
+ * Get all cases reported by the current authenticated user
+ * Internal notes are NEVER included in the response.
+ */
+const getMyCases = async (req, res, next) => {
+  try {
+    const { page, limit } = req.query;
+    const result = await caseService.getCasesByReporter(req.user._id, {
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 20,
+    });
+    return sendSuccess(res, result, 'Your cases retrieved');
   } catch (err) {
     next(err);
   }
 };
 
 /**
+ * GET /api/cases/ref/:refNum
+ * Look up a case by its human-readable reference number (e.g. JN-2024-00042)
+ * Works with or without authentication — used for anonymous tracking.
+ * Never exposes internalNotes or contact details.
+ */
+const getCaseByRef = async (req, res, next) => {
+  try {
+    const caseDoc = await caseService.getCaseByReferenceNumber(req.params.refNum);
+    if (!caseDoc) {
+      return sendNotFound(res, `Case ${req.params.refNum} not found. Please check your reference number.`);
+    }
+
+    const data = caseDoc.toObject();
+    // Always strip sensitive fields for this public endpoint
+    delete data.internalNotes;
+    delete data.contactName;
+    delete data.contactEmail;
+    delete data.reportedBy;
+
+    return sendSuccess(res, { case: data }, 'Case retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/cases/:id/updates
+ * Get only the publicUpdates for a citizen's own case.
+ * Does NOT expose internal notes, assigned officer, or other staff data.
+ */
+const getPublicUpdates = async (req, res, next) => {
+  try {
+    const caseDoc = await caseService.getCaseById(req.params.id);
+    if (!caseDoc) return sendNotFound(res, 'Case not found');
+
+    // Only the reporter or staff can view updates
+    const isOwner = caseDoc.reportedBy._id.toString() === req.user._id.toString();
+    const isStaff = ['police_officer', 'admin'].includes(req.user.role);
+
+    if (!isOwner && !isStaff) {
+      return sendForbidden(res, 'You do not have access to this case');
+    }
+
+    return sendSuccess(
+      res,
+      {
+        caseId: caseDoc._id,
+        referenceNumber: caseDoc.referenceNumber,
+        status: caseDoc.status,
+        publicUpdates: caseDoc.publicUpdates || [],
+        timeline: caseDoc.timeline.map((t) => ({
+          status: t.status,
+          note: t.note,
+          createdAt: t.createdAt,
+          // Never expose updatedBy (officer ID)
+        })),
+      },
+      'Case updates retrieved'
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Shared — Case Detail (Owner or Staff)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/cases/:id
+ * Get a full case by MongoDB ObjectId.
+ * - Citizens see everything except internalNotes.
+ * - Staff see everything.
+ */
+const getCaseById = async (req, res, next) => {
+  try {
+    const caseDoc = await caseService.getCaseById(req.params.id);
+    if (!caseDoc) return sendNotFound(res, 'Case not found');
+
+    const isOwner = caseDoc.reportedBy._id.toString() === req.user._id.toString();
+    const isStaff = ['police_officer', 'admin'].includes(req.user.role);
+
+    if (!isOwner && !isStaff) {
+      return sendForbidden(res, 'You do not have access to this case');
+    }
+
+    const data = caseDoc.toObject();
+
+    // Strip internal officer notes for non-staff
+    if (!isStaff) {
+      delete data.internalNotes;
+      // Also strip officer contact details
+      delete data.assignedOfficer;
+    }
+
+    return sendSuccess(res, { case: data }, 'Case retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Staff — Case Management
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
  * GET /api/cases
- * Get paginated case list (officers/admins only)
+ * Paginated case list — police_officer and admin only
  */
 const getCases = async (req, res, next) => {
   try {
@@ -45,52 +192,8 @@ const getCases = async (req, res, next) => {
 };
 
 /**
- * GET /api/cases/my
- * Get cases reported by the current user
- */
-const getMyCases = async (req, res, next) => {
-  try {
-    const { page, limit } = req.query;
-    const result = await caseService.getCasesByReporter(req.user._id, {
-      page: parseInt(page) || 1,
-      limit: parseInt(limit) || 20,
-    });
-    return sendSuccess(res, result, 'Your cases retrieved');
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * GET /api/cases/:id
- * Get a single case by ID
- */
-const getCaseById = async (req, res, next) => {
-  try {
-    const caseDoc = await caseService.getCaseById(req.params.id);
-    if (!caseDoc) return sendNotFound(res, 'Case not found');
-
-    // Anonymous reporters can only see their own cases (without internal notes)
-    const isOwner = caseDoc.reportedBy._id.toString() === req.user._id.toString();
-    const isStaff = ['officer', 'admin'].includes(req.user.role);
-
-    if (!isOwner && !isStaff) {
-      return sendForbidden(res, 'You do not have access to this case');
-    }
-
-    // Strip internal notes for non-staff
-    const data = caseDoc.toObject();
-    if (!isStaff) delete data.internalNotes;
-
-    return sendSuccess(res, { case: data }, 'Case retrieved');
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
  * PATCH /api/cases/:id/status
- * Update case status (officers/admins only)
+ * Update case status — police_officer and admin only
  */
 const updateCaseStatus = async (req, res, next) => {
   try {
@@ -101,22 +204,32 @@ const updateCaseStatus = async (req, res, next) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Evidence Upload
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * POST /api/cases/:id/evidence
- * Upload evidence file(s) for a case
+ * Upload evidence files for a case (owner or staff)
  */
 const uploadEvidence = async (req, res, next) => {
   try {
     if (!req.files || req.files.length === 0) {
-      return sendNotFound(res, 'No files uploaded');
+      return sendError(res, 'No files uploaded', 400);
     }
 
     const caseDoc = await caseService.getCaseById(req.params.id);
     if (!caseDoc) return sendNotFound(res, 'Case not found');
 
+    // Only case owner or staff can upload evidence
+    const isOwner = caseDoc.reportedBy._id.toString() === req.user._id.toString();
+    const isStaff = ['police_officer', 'admin'].includes(req.user.role);
+    if (!isOwner && !isStaff) {
+      return sendForbidden(res, 'You cannot upload evidence to this case');
+    }
+
     const evidenceDocs = await Promise.all(
       req.files.map(async (file) => {
-        // Compute SHA-256 hash for integrity
         const fileBuffer = fs.readFileSync(file.path);
         const integrityHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
 
@@ -145,14 +258,13 @@ const uploadEvidence = async (req, res, next) => {
             {
               action: 'uploaded',
               performedBy: req.user._id,
-              note: 'Initial upload',
+              note: 'Initial upload by reporter',
             },
           ],
         });
       })
     );
 
-    // Link evidence to case
     caseDoc.evidence.push(...evidenceDocs.map((e) => e._id));
     await caseDoc.save();
 
@@ -164,10 +276,30 @@ const uploadEvidence = async (req, res, next) => {
       metadata: { files: evidenceDocs.map((e) => e.originalName) },
     });
 
-    return sendCreated(res, { evidence: evidenceDocs }, 'Evidence uploaded successfully');
+    return sendCreated(
+      res,
+      {
+        evidence: evidenceDocs.map((e) => ({
+          _id: e._id,
+          originalName: e.originalName,
+          fileType: e.fileType,
+          sizeBytes: e.sizeBytes,
+        })),
+      },
+      'Evidence uploaded successfully'
+    );
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = { createCase, getCases, getMyCases, getCaseById, updateCaseStatus, uploadEvidence };
+module.exports = {
+  createCase,
+  getCases,
+  getMyCases,
+  getCaseById,
+  getCaseByRef,
+  getPublicUpdates,
+  updateCaseStatus,
+  uploadEvidence,
+};
