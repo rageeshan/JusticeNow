@@ -37,6 +37,11 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
 
   @override
   void dispose() {
+    _titleCtrl.removeListener(_onFieldChanged);
+    _descCtrl.removeListener(_onFieldChanged);
+    _locationCtrl.removeListener(_onFieldChanged);
+    _nameCtrl.removeListener(_onFieldChanged);
+    _emailCtrl.removeListener(_onFieldChanged);
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _locationCtrl.dispose();
@@ -48,19 +53,32 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
   @override
   void initState() {
     super.initState();
+    // Trigger a rebuild whenever any text field changes so _canContinue
+    // reads the latest controller values and enables Continue immediately.
+    _titleCtrl.addListener(_onFieldChanged);
+    _descCtrl.addListener(_onFieldChanged);
+    _locationCtrl.addListener(_onFieldChanged);
+    _nameCtrl.addListener(_onFieldChanged);
+    _emailCtrl.addListener(_onFieldChanged);
     // Reset form when entering the screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(reportFormProvider.notifier).reset();
     });
   }
 
+  void _onFieldChanged() => setState(() {});
+
   bool _canContinue(ReportFormState form) {
     return switch (form.currentStep) {
       1 => true,
       2 => form.isStep2Valid,
-      3 => form.isStep3Valid,
+      // Read directly from controllers — they are always up to date
+      3 => _titleCtrl.text.trim().length >= 5 &&
+          _descCtrl.text.trim().length >= 10 &&
+          form.incidentDate != null &&
+          _locationCtrl.text.trim().isNotEmpty,
       4 => true,
-      5 => form.isStep5Valid,
+      5 => form.isAnonymous || _nameCtrl.text.trim().isNotEmpty,
       _ => true,
     };
   }
@@ -421,44 +439,48 @@ class _Step2Category extends StatelessWidget {
           itemBuilder: (_, i) {
             final cat = kIncidentCategories[i];
             final isSelected = form.selectedCategory == cat.id;
-            return GestureDetector(
-              onTap: () => notifier.setCategory(cat.id, cat.label),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.accent.withValues(alpha: 0.12)
-                      : AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? AppColors.accent : AppColors.divider,
-                    width: isSelected ? 1.5 : 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      cat.icon,
-                      size: 24,
-                      color: isSelected
-                          ? AppColors.accent
-                          : AppColors.textSecondary,
+            return Material(
+              color: isSelected
+                  ? AppColors.accent.withValues(alpha: 0.12)
+                  : AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: () => notifier.setCategory(cat.id, cat.label),
+                borderRadius: BorderRadius.circular(12),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? AppColors.accent : AppColors.divider,
+                      width: isSelected ? 1.5 : 1,
                     ),
-                    const Spacer(),
-                    Text(
-                      cat.label,
-                      style: TextStyle(
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        cat.icon,
+                        size: 24,
                         color: isSelected
                             ? AppColors.accent
-                            : AppColors.textPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        height: 1.3,
+                            : AppColors.textSecondary,
                       ),
-                    ),
-                  ],
+                      const Spacer(),
+                      Text(
+                        cat.label,
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppColors.accent
+                              : AppColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

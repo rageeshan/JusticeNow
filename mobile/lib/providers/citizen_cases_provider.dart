@@ -98,7 +98,7 @@ class ReportFormState {
 
   bool get isStep3Valid =>
       title.trim().length >= 5 &&
-      description.trim().length >= 20 &&
+      description.trim().length >= 10 &&
       incidentDate != null &&
       location.trim().isNotEmpty;
 
