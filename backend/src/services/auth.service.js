@@ -29,7 +29,23 @@ const createAnonymousSession = async () => {
 /**
  * Register a user with email/password, name, role, and role-specific details
  */
-const registerCitizen = async ({ email, password, fullName, role, province, district, policeId, lawyerId }) => {
+const registerCitizen = async ({
+  email,
+  password,
+  fullName,
+  role,
+  phone,
+  nic,
+  gender,
+  province,
+  district,
+  policeId,
+  lawyerId,
+  courtNumber,
+  certificateUrl,
+  aboutMe,
+  preferredLanguage,
+}) => {
   const existing = await User.findOne({ email });
   if (existing) {
     const err = new Error('Email already in use');
@@ -52,10 +68,17 @@ const registerCitizen = async ({ email, password, fullName, role, province, dist
     isVerified,
     profile: {
       fullName: fullName || null,
+      phone: phone || null,
+      nic: nic || null,
+      gender: gender || null,
       province: province || null,
       district: district || null,
       policeId: policeId || null,
-      lawyerId: lawyerId || null,
+      courtNumber: courtNumber || null,
+      lawyerId: lawyerId || courtNumber || null,
+      certificateUrl: certificateUrl || null,
+      aboutMe: aboutMe || null,
+      preferredLanguage: preferredLanguage || null,
     },
   });
 
@@ -96,13 +119,26 @@ const loginCitizen = async ({ email, password }) => {
     throw err;
   }
   if (user.approvalStatus === 'pending') {
-    const err = new Error('Your account is pending administrator verification. Please wait for an admin to approve your account before signing in.');
+    const err = new Error('Your account is under review. An administrator must verify your account before you can log in.');
     err.statusCode = 403;
+    err.code = 'ACCOUNT_PENDING';
+    err.data = {
+      approvalStatus: 'pending',
+      role: user.role,
+      email: user.email,
+    };
     throw err;
   }
   if (user.approvalStatus === 'rejected') {
-    const err = new Error('Your account registration was rejected by an administrator.');
+    const err = new Error(user.rejectionReason ? `Account registration rejected: ${user.rejectionReason}` : 'Your account registration was rejected by an administrator.');
     err.statusCode = 403;
+    err.code = 'ACCOUNT_REJECTED';
+    err.data = {
+      approvalStatus: 'rejected',
+      role: user.role,
+      email: user.email,
+      rejectionReason: user.rejectionReason || null,
+    };
     throw err;
   }
 

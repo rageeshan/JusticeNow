@@ -36,26 +36,36 @@ const authValidators = {
   register: [
     body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-    body('province')
-      .if(body('role').custom((val) => !val || val === 'citizen'))
-      .trim()
-      .notEmpty()
-      .withMessage('Province is required for citizen registration'),
-    body('district')
-      .if(body('role').custom((val) => !val || val === 'citizen'))
-      .trim()
-      .notEmpty()
-      .withMessage('District is required for citizen registration'),
+    body('fullName').optional().trim(),
+    body('phone').optional().trim(),
+    body('nic').optional().trim(),
+    body('gender')
+      .optional()
+      .isIn(['Male', 'Female', 'Other'])
+      .withMessage('Gender must be Male, Female, or Other'),
+    body('province').optional().trim(),
+    body('district').optional().trim(),
     body('policeId')
       .if(body('role').equals('police_officer'))
       .trim()
       .notEmpty()
       .withMessage('Police ID is required for police officer registration'),
+    body('courtNumber')
+      .optional()
+      .trim(),
     body('lawyerId')
-      .if(body('role').equals('lawyer'))
-      .trim()
-      .notEmpty()
-      .withMessage('Lawyer ID is required for lawyer registration'),
+      .optional()
+      .trim(),
+    body('certificateUrl')
+      .optional()
+      .trim(),
+    body('aboutMe')
+      .optional()
+      .trim(),
+    body('preferredLanguage')
+      .optional()
+      .isIn(['Sinhala', 'Tamil', 'English'])
+      .withMessage('Preferred Language must be Sinhala, Tamil, or English'),
     validate,
   ],
   login: [
@@ -71,6 +81,7 @@ const adminValidators = {
     body('status')
       .isIn(['approved', 'rejected'])
       .withMessage('Status must be either approved or rejected'),
+    body('reason').optional().trim(),
     validate,
   ],
 };

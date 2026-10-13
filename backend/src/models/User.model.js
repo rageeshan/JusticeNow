@@ -36,14 +36,33 @@ const userSchema = new mongoose.Schema(
     },
 
     profile: {
-      fullName: { type: String, default: null },
-      phone: { type: String, default: null },
-      organization: { type: String, default: null },
-      avatarUrl: { type: String, default: null },
+      // Common profile fields
+      fullName: { type: String, default: null, trim: true },
+      phone: { type: String, default: null, trim: true },
+      nic: { type: String, default: null, trim: true },
+      gender: { type: String, enum: ['Male', 'Female', 'Other', null], default: null },
       province: { type: String, default: null, trim: true },
       district: { type: String, default: null, trim: true },
-      policeId: { type: String, default: null, trim: true },
+
+      // Role-specific fields: Lawyer
+      courtNumber: { type: String, default: null, trim: true },
       lawyerId: { type: String, default: null, trim: true },
+      certificateUrl: { type: String, default: null }, // Supreme Court Certificate photo or PDF
+
+      // Role-specific fields: Police Officer
+      policeId: { type: String, default: null, trim: true },
+
+      // Role-specific fields: Professional details (Lawyer & Police Officer)
+      aboutMe: { type: String, default: null, trim: true },
+      preferredLanguage: {
+        type: String,
+        enum: ['Sinhala', 'Tamil', 'English', null],
+        default: null,
+      },
+
+      // Existing/organization fields
+      organization: { type: String, default: null },
+      avatarUrl: { type: String, default: null },
     },
 
     approvalStatus: {
@@ -52,6 +71,23 @@ const userSchema = new mongoose.Schema(
       default: function () {
         return ['police_officer', 'lawyer'].includes(this.role) ? 'pending' : 'approved';
       },
+    },
+
+    rejectionReason: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    reviewedAt: {
+      type: Date,
+      default: null,
     },
 
     isVerified: {

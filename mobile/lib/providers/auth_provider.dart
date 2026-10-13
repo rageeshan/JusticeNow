@@ -7,7 +7,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
 });
 
-// ─── Registration Result ───────────────────────────────────────
+// ─── Registration & Login Results ─────────────────────────────
 class RegisterResult {
   final bool success;
   final bool isPending;
@@ -17,6 +17,24 @@ class RegisterResult {
   const RegisterResult({
     required this.success,
     this.isPending = false,
+    this.message,
+    this.error,
+  });
+}
+
+class LoginResult {
+  final bool success;
+  final bool isPending;
+  final bool isRejected;
+  final String? rejectionReason;
+  final String? message;
+  final String? error;
+
+  const LoginResult({
+    required this.success,
+    this.isPending = false,
+    this.isRejected = false,
+    this.rejectionReason,
     this.message,
     this.error,
   });
@@ -96,7 +114,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<LoginResult> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final data = await _repo.login(email, password);
@@ -105,15 +123,39 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: data['user'] as Map<String, dynamic>,
         isLoading: false,
       );
+      return const LoginResult(success: true);
     } catch (e) {
       String message = e.toString();
+      bool isPending = false;
+      bool isRejected = false;
+      String? rejectionReason;
+
       if (e is DioException && e.response?.data != null) {
         final resp = e.response!.data;
-        if (resp is Map && resp['message'] != null) {
-          message = resp['message'].toString();
+        if (resp is Map) {
+          if (resp['message'] != null) {
+            message = resp['message'].toString();
+          }
+          final errorData = resp['data'];
+          if (errorData is Map) {
+            if (errorData['approvalStatus'] == 'pending') {
+              isPending = true;
+            } else if (errorData['approvalStatus'] == 'rejected') {
+              isRejected = true;
+              rejectionReason = errorData['rejectionReason']?.toString();
+            }
+          }
         }
       }
       state = state.copyWith(error: message, isLoading: false);
+      return LoginResult(
+        success: false,
+        isPending: isPending,
+        isRejected: isRejected,
+        rejectionReason: rejectionReason,
+        message: message,
+        error: message,
+      );
     }
   }
 
@@ -122,10 +164,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String password, {
     String? fullName,
     String? role,
+    String? phone,
+    String? nic,
+    String? gender,
     String? province,
     String? district,
     String? policeId,
     String? lawyerId,
+    String? courtNumber,
+    String? certificateUrl,
+    String? aboutMe,
+    String? preferredLanguage,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -134,10 +183,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
         password,
         fullName: fullName,
         role: role,
+        phone: phone,
+        nic: nic,
+        gender: gender,
         province: province,
         district: district,
         policeId: policeId,
         lawyerId: lawyerId,
+        courtNumber: courtNumber,
+        certificateUrl: certificateUrl,
+        aboutMe: aboutMe,
+        preferredLanguage: preferredLanguage,
       );
 
       final isPending = data['isPending'] == true;

@@ -28,9 +28,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(authProvider.notifier).login(_emailCtrl.text.trim(), _passwordCtrl.text);
-    if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
-      context.go(AppRoutes.home);
+    final result = await ref.read(authProvider.notifier).login(_emailCtrl.text.trim(), _passwordCtrl.text);
+    if (!mounted) return;
+
+    if (result.success) {
+      final user = ref.read(authProvider).user;
+      if (user?['role'] == 'admin') {
+        context.go(AppRoutes.adminDashboard);
+      } else {
+        context.go(AppRoutes.home);
+      }
+    } else if (result.isPending) {
+      context.push(AppRoutes.pendingApproval);
+    } else if (result.isRejected) {
+      context.push(AppRoutes.rejected, extra: result.rejectionReason);
     }
   }
 

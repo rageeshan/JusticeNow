@@ -2,10 +2,14 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const { authenticate } = require('../middleware/auth.middleware');
+const upload = require('../middleware/upload.middleware');
 const { authValidators } = require('../utils/validators');
 
 // POST /api/auth/anonymous   — No auth required
 router.post('/anonymous', authController.anonymousLogin);
+
+// POST /api/auth/upload-certificate — Upload lawyer certificate / document (image or PDF)
+router.post('/upload-certificate', upload.single('certificate'), authController.uploadCertificate);
 
 // POST /api/auth/register    — No auth required
 router.post('/register', authValidators.register, authController.register);

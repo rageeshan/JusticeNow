@@ -23,7 +23,10 @@ const getUsers = async (req, res, next) => {
       query.$or = [
         { email: { $regex: search, $options: 'i' } },
         { 'profile.fullName': { $regex: search, $options: 'i' } },
+        { 'profile.phone': { $regex: search, $options: 'i' } },
+        { 'profile.nic': { $regex: search, $options: 'i' } },
         { 'profile.policeId': { $regex: search, $options: 'i' } },
+        { 'profile.courtNumber': { $regex: search, $options: 'i' } },
         { 'profile.lawyerId': { $regex: search, $options: 'i' } },
       ];
     }
@@ -57,6 +60,27 @@ const getUsers = async (req, res, next) => {
 };
 
 /**
+ * GET /api/admin/users/:id
+ * Retrieve comprehensive details for a specific user (Verification Detail Page)
+ */
+const getUserById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id)
+      .select('-passwordHash')
+      .populate('reviewedBy', 'email profile.fullName role');
+
+    if (!user) {
+      return sendNotFound(res, 'User not found');
+    }
+
+    return sendSuccess(res, { user }, 'User details retrieved successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * PATCH /api/admin/users/:id/status
  * Approve or reject a user account (e.g. police officer or lawyer)
  */
@@ -73,6 +97,13 @@ const updateUserApprovalStatus = async (req, res, next) => {
     const previousStatus = user.approvalStatus;
     user.approvalStatus = status;
     user.isVerified = status === 'approved';
+    if (status === 'rejected') {
+      user.rejectionReason = reason || 'Application requirements not met';
+    } else if (status === 'approved') {
+      user.rejectionReason = null;
+    }
+    user.reviewedBy = req.user._id;
+    user.reviewedAt = new Date();
 
     await user.save();
 
@@ -103,5 +134,6 @@ const updateUserApprovalStatus = async (req, res, next) => {
 
 module.exports = {
   getUsers,
+  getUserById,
   updateUserApprovalStatus,
 };

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/api_service.dart';
@@ -15,26 +16,50 @@ class AuthRepository {
     return response.data['data'];
   }
 
+  /// Upload lawyer certificate or credential document
+  Future<String> uploadCertificate(File file) async {
+    final fileName = file.path.split(Platform.pathSeparator).last;
+    final formData = FormData.fromMap({
+      'certificate': await MultipartFile.fromFile(file.path, filename: fileName),
+    });
+    final response = await _dio.post('/auth/upload-certificate', data: formData);
+    return response.data['data']['fileUrl'] as String;
+  }
+
   /// Register user with email, password, name and role-specific details
   Future<Map<String, dynamic>> register(
     String email,
     String password, {
     String? fullName,
     String? role,
+    String? phone,
+    String? nic,
+    String? gender,
     String? province,
     String? district,
     String? policeId,
     String? lawyerId,
+    String? courtNumber,
+    String? certificateUrl,
+    String? aboutMe,
+    String? preferredLanguage,
   }) async {
     final response = await _dio.post('/auth/register', data: {
       'email': email,
       'password': password,
       if (fullName != null) 'fullName': fullName,
       if (role != null) 'role': role,
+      if (phone != null) 'phone': phone,
+      if (nic != null) 'nic': nic,
+      if (gender != null) 'gender': gender,
       if (province != null) 'province': province,
       if (district != null) 'district': district,
       if (policeId != null) 'policeId': policeId,
       if (lawyerId != null) 'lawyerId': lawyerId,
+      if (courtNumber != null) 'courtNumber': courtNumber,
+      if (certificateUrl != null) 'certificateUrl': certificateUrl,
+      if (aboutMe != null) 'aboutMe': aboutMe,
+      if (preferredLanguage != null) 'preferredLanguage': preferredLanguage,
     });
     final data = response.data['data'] as Map<String, dynamic>;
     final token = data['token'] as String?;
@@ -52,6 +77,12 @@ class AuthRepository {
       if (search != null && search.isNotEmpty) 'search': search,
     });
     return response.data['data']['users'] as List<dynamic>;
+  }
+
+  /// Admin: Get single user detailed verification profile
+  Future<Map<String, dynamic>> getAdminUserDetail(String userId) async {
+    final response = await _dio.get('/admin/users/$userId');
+    return response.data['data']['user'] as Map<String, dynamic>;
   }
 
   /// Admin: Update user approval status (approved / rejected)
