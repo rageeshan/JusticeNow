@@ -231,6 +231,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  void setUser(Map<String, dynamic> user) {
+    state = state.copyWith(user: user);
+  }
+
   Future<void> logout() async {
     await _repo.logout();
     state = const AuthState(status: AuthStatus.unauthenticated);

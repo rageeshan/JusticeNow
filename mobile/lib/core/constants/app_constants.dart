@@ -21,6 +21,15 @@ class AppConstants {
         : 'http://localhost:3000/api';
   }
 
+  static String get serverOrigin => baseUrl.replaceAll('/api', '');
+
+  static String resolveImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return '$serverOrigin$cleanPath';
+  }
+
   // Secure storage keys
   static const String tokenKey = 'jn_auth_token';
   static const String userKey = 'jn_user_data';
@@ -33,6 +42,12 @@ class AppConstants {
     'evidence_requested': 'Evidence Requested',
     'referred_to_ngo': 'Referred to NGO',
     'legal_action_initiated': 'Legal Action Initiated',
+    'awaiting_lawyer_selection': 'Approved - Select Lawyer',
+    'waiting_for_lawyer_approval': 'Waiting for Lawyer Approval',
+    'approved_scheduled': 'Approved – Scheduled',
+    'in_progress': 'In Progress',
+    'completed': 'Completed',
+    'lawyer_declined': 'Lawyer Declined',
     'resolved': 'Resolved',
     'closed': 'Closed',
     'rejected': 'Rejected',

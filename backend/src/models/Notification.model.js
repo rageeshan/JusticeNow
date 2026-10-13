@@ -25,7 +25,15 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['awaiting_lawyer_selection', 'case_rejected', 'general'],
+      enum: [
+        'awaiting_lawyer_selection',
+        'waiting_for_lawyer_approval',
+        'new_case_request',
+        'case_approved_scheduled',
+        'lawyer_declined',
+        'case_rejected',
+        'general',
+      ],
       default: 'general',
     },
     actionRoute: {

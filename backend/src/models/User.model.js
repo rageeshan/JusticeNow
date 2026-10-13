@@ -47,6 +47,8 @@ const userSchema = new mongoose.Schema(
       phone: { type: String, default: null, trim: true },
       nic: { type: String, default: null, trim: true },
       gender: { type: String, enum: ['Male', 'Female', 'Other', null], default: null },
+      age: { type: Number, default: null },
+      dob: { type: Date, default: null },
       province: { type: String, default: null, trim: true },
       district: { type: String, default: null, trim: true },
 
@@ -69,6 +71,12 @@ const userSchema = new mongoose.Schema(
       // Existing/organization fields
       organization: { type: String, default: null },
       avatarUrl: { type: String, default: null },
+
+      // Lawyer availability schedule (weekly slots)
+      availability: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null,
+      },
     },
 
     approvalStatus: {

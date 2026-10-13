@@ -75,6 +75,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  String _formatIncidentDate(dynamic dateVal) {
+    if (dateVal == null) return '';
+    try {
+      final dt = DateTime.parse(dateVal.toString()).toLocal();
+      return DateFormat('MMM dd, yyyy').format(dt);
+    } catch (_) {
+      return dateVal.toString();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -149,15 +159,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           final createdAt = notif['createdAt'] as String?;
                           final isAwaitingLawyer = type == 'awaiting_lawyer_selection';
                           final isRejected = type == 'case_rejected';
+                          final isNewCaseRequest = type == 'new_case_request';
+                          final isLawyerDeclined = type == 'lawyer_declined';
+                          final isApprovedScheduled = type == 'case_approved_scheduled';
+
+                          final notifData = notif['data'] as Map<String, dynamic>? ?? {};
+                          final caseRef = notif['case'] ?? notifData['caseId'];
+                          final caseId = caseRef is Map ? caseRef['_id']?.toString() : caseRef?.toString();
+                          final caseMap = caseRef is Map<String, dynamic> ? caseRef : null;
+                          final incidentTitle = caseMap?['title'] ??
+                              notifData['caseTitle'] ??
+                              (caseMap?['referenceNumber'] != null ? 'Case #${caseMap!['referenceNumber']}' : null);
+                          final incidentDateRaw = caseMap?['incidentDate'] ?? caseMap?['createdAt'] ?? notifData['incidentDate'];
 
                           Color badgeColor = AppColors.info;
                           IconData iconData = Icons.notifications_rounded;
-                          if (isAwaitingLawyer) {
+                          if (isAwaitingLawyer || isApprovedScheduled) {
                             badgeColor = AppColors.success;
-                            iconData = Icons.gavel_rounded;
-                          } else if (isRejected) {
+                            iconData = isApprovedScheduled ? Icons.event_available_rounded : Icons.gavel_rounded;
+                          } else if (isRejected || isLawyerDeclined) {
                             badgeColor = AppColors.error;
                             iconData = Icons.cancel_outlined;
+                          } else if (isNewCaseRequest) {
+                            badgeColor = AppColors.accent;
+                            iconData = Icons.folder_shared_rounded;
                           }
 
                           return GestureDetector(
@@ -177,6 +202,49 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // Top Banner: Incident Title and Date
+                                  if (incidentTitle != null && incidentTitle.toString().isNotEmpty) ...[
+                                    Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryDark.withValues(alpha: 0.6),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.assignment_outlined, size: 14, color: badgeColor),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              incidentTitle.toString(),
+                                              style: TextStyle(
+                                                color: badgeColor,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (incidentDateRaw != null) ...[
+                                            const SizedBox(width: 8),
+                                            const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textMuted),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              _formatIncidentDate(incidentDateRaw),
+                                              style: const TextStyle(
+                                                color: AppColors.textMuted,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                   Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -227,18 +295,69 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     ),
                                   ),
 
-                                  // Action Button for Find Lawyer
-                                  if (isAwaitingLawyer) ...[
+                                  // Action Button for Find Lawyer (Citizen - Initial or Declined)
+                                  if (isAwaitingLawyer || isLawyerDeclined) ...[
                                     const SizedBox(height: 14),
                                     SizedBox(
                                       width: double.infinity,
                                       child: ElevatedButton.icon(
                                         onPressed: () {
                                           if (!isRead) _markAsRead(id);
-                                          context.push(AppRoutes.legalAid);
+                                          final targetPath = caseId != null
+                                              ? '${AppRoutes.legalAid}?caseId=$caseId'
+                                              : AppRoutes.legalAid;
+                                          context.push(targetPath);
                                         },
                                         icon: const Icon(Icons.person_search_rounded, size: 18),
-                                        label: const Text('Find a Lawyer'),
+                                        label: Text(isLawyerDeclined ? 'Find another lawyer' : 'Find a Lawyer'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.accent,
+                                          foregroundColor: AppColors.primaryDark,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+
+                                  // Action Button for Case Approved: View in History
+                                  if (isApprovedScheduled) ...[
+                                    const SizedBox(height: 14),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          if (!isRead) _markAsRead(id);
+                                          context.push(AppRoutes.myCases);
+                                        },
+                                        icon: const Icon(Icons.history_rounded, size: 18),
+                                        label: const Text('View in History'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.success,
+                                          foregroundColor: AppColors.primaryDark,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+
+                                  // Action Button for Lawyer: View Case Details
+                                  if (isNewCaseRequest && caseId != null) ...[
+                                    const SizedBox(height: 14),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          if (!isRead) _markAsRead(id);
+                                          context.push('/legal-aid/lawyer-case/$caseId');
+                                        },
+                                        icon: const Icon(Icons.folder_shared_rounded, size: 18),
+                                        label: const Text('View Case Request'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.accent,
                                           foregroundColor: AppColors.primaryDark,

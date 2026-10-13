@@ -83,6 +83,12 @@ class _CaseCard extends StatelessWidget {
       'submitted' => AppColors.statusSubmitted,
       'under_review' => AppColors.statusUnderReview,
       'investigating' => AppColors.statusInvestigating,
+      'awaiting_lawyer_selection' => AppColors.success,
+      'waiting_for_lawyer_approval' => AppColors.accent,
+      'approved_scheduled' => AppColors.info,
+      'in_progress' => AppColors.info,
+      'completed' => AppColors.statusResolved,
+      'lawyer_declined' => AppColors.statusRejected,
       'resolved' => AppColors.statusResolved,
       'closed' => AppColors.statusClosed,
       'rejected' => AppColors.statusRejected,
@@ -96,6 +102,8 @@ class _CaseCard extends StatelessWidget {
     final statusLabel = AppConstants.caseStatusLabels[status] ?? status ?? 'Unknown';
     final category = caseData['category'] as String?;
     final categoryLabel = AppConstants.caseCategories[category] ?? category ?? '';
+    final scheduledDate = caseData['scheduledMeetingDate'] as String?;
+    final scheduledTime = caseData['scheduledMeetingTime'] as String?;
 
     return GestureDetector(
       onTap: () => context.push('/cases/${caseData['_id']}'),
@@ -155,6 +163,29 @@ class _CaseCard extends StatelessWidget {
               categoryLabel,
               style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
+            if (scheduledDate != null && scheduledDate.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.event_available_rounded, size: 14, color: AppColors.info),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Meeting: $scheduledDate ${scheduledTime != null ? '• $scheduledTime' : ''}',
+                        style: const TextStyle(color: AppColors.info, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [
@@ -168,6 +199,34 @@ class _CaseCard extends StatelessWidget {
                 const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.textMuted),
               ],
             ),
+            if (status == 'awaiting_lawyer_selection' || status == 'lawyer_declined') ...[
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    final caseId = caseData['_id']?.toString();
+                    final targetPath = caseId != null
+                        ? '${AppRoutes.legalAid}?caseId=$caseId'
+                        : AppRoutes.legalAid;
+                    context.push(targetPath);
+                  },
+                  icon: const Icon(Icons.person_search_rounded, size: 18),
+                  label: Text(
+                    status == 'lawyer_declined' ? 'Find another lawyer' : 'Find a Lawyer',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.primaryDark,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

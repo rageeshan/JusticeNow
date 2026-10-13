@@ -121,6 +121,12 @@ class AuthRepository {
     return response.data['data']['user'] as Map<String, dynamic>;
   }
 
+  /// Update current user profile
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> profileData) async {
+    final response = await _dio.patch('/auth/profile', data: profileData);
+    return response.data['data']['user'] as Map<String, dynamic>;
+  }
+
   /// Logout — clear stored token
   Future<void> logout() async {
     await _storage.delete(key: AppConstants.tokenKey);

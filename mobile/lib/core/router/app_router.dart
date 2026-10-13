@@ -11,6 +11,14 @@ import '../../presentation/screens/cases/my_cases_screen.dart';
 import '../../presentation/screens/cases/report_case_screen.dart';
 import '../../presentation/screens/cases/case_detail_screen.dart';
 import '../../presentation/screens/legal_aid/legal_aid_screen.dart';
+import '../../presentation/screens/legal_aid/lawyer_profile_screen.dart';
+import '../../presentation/screens/legal_aid/book_lawyer_screen.dart';
+import '../../presentation/screens/legal_aid/booking_success_screen.dart';
+import '../../presentation/screens/legal_aid/lawyer_case_detail_screen.dart';
+import '../../presentation/screens/legal_aid/counsel_cases_screen.dart';
+import '../../presentation/screens/legal_aid/manage_availability_screen.dart';
+import '../../presentation/screens/legal_aid/submit_ad_screen.dart';
+import '../../presentation/screens/legal_aid/lawyer_profile_update_screen.dart';
 import '../../presentation/screens/dashboard/dashboard_screen.dart';
 import '../../presentation/screens/home/home_screen.dart';
 import '../../presentation/screens/admin/admin_dashboard_screen.dart';
@@ -35,6 +43,14 @@ class AppRoutes {
   static const reportCase = '/report-case';
   static const caseDetail = '/cases/:id';
   static const legalAid = '/legal-aid';
+  static const lawyerProfile = '/legal-aid/lawyer/:id';
+  static const bookLawyer = '/legal-aid/book/:id';
+  static const bookingSuccess = '/legal-aid/booking-success';
+  static const lawyerCaseDetail = '/legal-aid/lawyer-case/:caseId';
+  static const lawyerCases = '/lawyer/cases';
+  static const lawyerAvailability = '/lawyer/availability';
+  static const lawyerSubmitAd = '/lawyer/submit-ad';
+  static const lawyerProfileUpdate = '/lawyer/profile';
   static const dashboard = '/dashboard';
   static const notifications = '/notifications';
   static const adminDashboard = '/admin/dashboard';
@@ -105,7 +121,65 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.legalAid,
-        builder: (context, state) => const LegalAidScreen(),
+        builder: (context, state) {
+          final caseId = state.uri.queryParameters['caseId'] ??
+              (state.extra is Map ? (state.extra as Map)['caseId']?.toString() : null);
+          return LegalAidScreen(caseId: caseId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.lawyerProfile,
+        builder: (context, state) {
+          final extraMap = state.extra is Map ? (state.extra as Map<String, dynamic>) : null;
+          return LawyerProfileScreen(
+            lawyerId: state.pathParameters['id']!,
+            initialLawyer: extraMap?['lawyer'] as Map<String, dynamic>?,
+            caseId: extraMap?['caseId'] as String?,
+            caseData: extraMap?['case'] as Map<String, dynamic>?,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.bookLawyer,
+        builder: (context, state) {
+          final extraMap = state.extra is Map ? (state.extra as Map<String, dynamic>) : null;
+          return BookLawyerScreen(
+            lawyerId: state.pathParameters['id']!,
+            lawyerData: extraMap?['lawyer'] as Map<String, dynamic>?,
+            caseId: extraMap?['caseId'] as String?,
+            initialCase: extraMap?['case'] as Map<String, dynamic>?,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.bookingSuccess,
+        builder: (context, state) => const BookingSuccessScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.lawyerCaseDetail,
+        builder: (context, state) => LawyerCaseDetailScreen(
+          caseId: state.pathParameters['caseId']!,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.lawyerCases,
+        builder: (context, state) {
+          final tab = state.uri.queryParameters['tab'];
+          final initialIndex = tab == 'in_progress' ? 1 : (tab == 'completed' ? 2 : 0);
+          return CounselCasesScreen(initialTabIndex: initialIndex);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.lawyerAvailability,
+        builder: (context, state) => const ManageAvailabilityScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.lawyerSubmitAd,
+        builder: (context, state) => const SubmitAdScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.lawyerProfileUpdate,
+        builder: (context, state) => const LawyerProfileUpdateScreen(),
       ),
       GoRoute(
         path: AppRoutes.dashboard,

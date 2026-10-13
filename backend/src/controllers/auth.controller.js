@@ -135,4 +135,34 @@ const getMe = async (req, res) => {
   return sendSuccess(res, { user: req.user }, 'Profile retrieved');
 };
 
-module.exports = { anonymousLogin, register, login, firebaseAuth, getMe, uploadCertificate };
+/**
+ * PATCH /api/auth/profile
+ * Update current authenticated user's profile details
+ */
+const updateProfile = async (req, res, next) => {
+  try {
+    const User = require('../models/User.model');
+    const { fullName, phone, aboutMe, preferredLanguage, district, province, courtNumber } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return sendError(res, 'User not found', 404);
+    }
+
+    if (!user.profile) user.profile = {};
+    if (fullName !== undefined) user.profile.fullName = fullName;
+    if (phone !== undefined) user.profile.phone = phone;
+    if (aboutMe !== undefined) user.profile.aboutMe = aboutMe;
+    if (preferredLanguage !== undefined) user.profile.preferredLanguage = preferredLanguage;
+    if (district !== undefined) user.profile.district = district;
+    if (province !== undefined) user.profile.province = province;
+    if (courtNumber !== undefined) user.profile.courtNumber = courtNumber;
+
+    await user.save();
+    return sendSuccess(res, { user }, 'Profile updated successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { anonymousLogin, register, login, firebaseAuth, getMe, updateProfile, uploadCertificate };
+

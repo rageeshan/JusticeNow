@@ -83,6 +83,11 @@ const caseSchema = new mongoose.Schema(
         'referred_to_ngo',
         'legal_action_initiated',
         'awaiting_lawyer_selection',
+        'waiting_for_lawyer_approval',
+        'approved_scheduled',
+        'in_progress',
+        'completed',
+        'lawyer_declined',
         'resolved',
         'closed',
         'rejected',
@@ -91,6 +96,12 @@ const caseSchema = new mongoose.Schema(
     },
 
     rejectionReason: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+
+    lawyerDeclineReason: {
       type: String,
       default: null,
       trim: true,
@@ -111,6 +122,38 @@ const caseSchema = new mongoose.Schema(
     isAnonymous: {
       type: Boolean,
       default: true,
+    },
+
+    // Assigned lawyer
+    assignedLawyer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    // Citizen booking details
+    preferredContactMethod: {
+      type: String,
+      enum: ['Call', 'Email', 'In-app', null],
+      default: null,
+    },
+    citizenMessageToLawyer: {
+      type: String,
+      default: null,
+    },
+
+    // Scheduled consultation / meeting
+    scheduledMeetingDate: {
+      type: Date,
+      default: null,
+    },
+    scheduledMeetingTime: {
+      type: String,
+      default: null,
+    },
+    completedAt: {
+      type: Date,
+      default: null,
     },
 
     // Assigned case officer

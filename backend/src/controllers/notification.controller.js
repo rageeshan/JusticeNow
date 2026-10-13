@@ -9,7 +9,7 @@ const getMyNotifications = async (req, res, next) => {
   try {
     const notifications = await Notification.find({ recipient: req.user._id })
       .sort({ createdAt: -1 })
-      .populate('case', 'referenceNumber title status');
+      .populate('case', 'referenceNumber title status incidentDate createdAt location category');
 
     const unreadCount = await Notification.countDocuments({
       recipient: req.user._id,

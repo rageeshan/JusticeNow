@@ -23,4 +23,7 @@ router.post('/firebase', authController.firebaseAuth);
 // GET  /api/auth/me          — Requires auth
 router.get('/me', authenticate, authController.getMe);
 
+// PATCH /api/auth/profile     — Requires auth
+router.patch('/profile', authenticate, authController.updateProfile);
+
 module.exports = router;
