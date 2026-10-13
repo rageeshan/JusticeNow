@@ -85,4 +85,18 @@ class CaseRepository {
     final response = await _dio.post('/cases/$caseId/evidence', data: formData);
     return response.data['data']['evidence'] as List<dynamic>;
   }
+
+  /// Translate incident / case report text and title using Gemini AI
+  Future<Map<String, dynamic>> translateReport({
+    String? title,
+    String? text,
+    required String targetLang,
+  }) async {
+    final response = await _dio.post('/translate', data: {
+      if (title != null) 'title': title,
+      if (text != null) 'text': text,
+      'targetLang': targetLang,
+    });
+    return response.data['data'] as Map<String, dynamic>;
+  }
 }

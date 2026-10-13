@@ -27,6 +27,57 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
   bool _isProcessingAction = false;
   String? _errorMessage;
 
+  // Gemini AI Translation State
+  String _selectedLang = 'original'; // 'original', 'en', 'si', 'ta'
+  bool _isTranslating = false;
+  final Map<String, Map<String, String>> _translationCache = {};
+
+  Future<void> _translateContent(String targetLang, String originalTitle, String originalDescription) async {
+    if (targetLang == 'original') {
+      setState(() => _selectedLang = 'original');
+      return;
+    }
+
+    if (_translationCache.containsKey(targetLang)) {
+      setState(() => _selectedLang = targetLang);
+      return;
+    }
+
+    setState(() => _isTranslating = true);
+
+    try {
+      final res = await _caseRepo.translateReport(
+        title: originalTitle,
+        text: originalDescription,
+        targetLang: targetLang,
+      );
+
+      final transTitle = (res['translatedTitle'] as String?)?.trim();
+      final transText = (res['translatedText'] as String?)?.trim();
+
+      if (mounted) {
+        setState(() {
+          _translationCache[targetLang] = {
+            'title': (transTitle != null && transTitle.isNotEmpty) ? transTitle : originalTitle,
+            'description': (transText != null && transText.isNotEmpty) ? transText : originalDescription,
+          };
+          _selectedLang = targetLang;
+          _isTranslating = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isTranslating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.error,
+            content: Text('Translation error: $e'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -497,8 +548,14 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
     }
 
     final c = _case ?? {};
-    final title = c['title'] ?? 'Incident Report';
-    final description = c['description'] ?? 'No description provided';
+    final String title = c['title'] ?? 'Incident Report';
+    final String description = c['description'] ?? 'No description provided';
+    final String displayedTitle = (_selectedLang != 'original' && _translationCache.containsKey(_selectedLang))
+        ? (_translationCache[_selectedLang]!['title'] ?? title)
+        : title;
+    final String displayedDescription = (_selectedLang != 'original' && _translationCache.containsKey(_selectedLang))
+        ? (_translationCache[_selectedLang]!['description'] ?? description)
+        : description;
     final category = c['category'] as String?;
     final status = c['status'] as String?;
     final refNumber = c['referenceNumber'] ?? '';
@@ -630,11 +687,12 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          _buildTranslationBar(title, description),
                           // Title
                           const Text('Report Title', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                           const SizedBox(height: 4),
                           Text(
-                            title,
+                            displayedTitle,
                             style: const TextStyle(
                               color: AppColors.textPrimary,
                               fontSize: 17,
@@ -649,7 +707,7 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
                           const Text('Report Description (Full Text)', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                           const SizedBox(height: 6),
                           Text(
-                            description,
+                            displayedDescription,
                             style: const TextStyle(
                               color: AppColors.textPrimary,
                               fontSize: 14,
@@ -1022,6 +1080,115 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
           const SizedBox(height: 10),
         ],
       ],
+    );
+  }
+
+  Widget _buildTranslationBar(String originalTitle, String originalDescription) {
+    final options = [
+      {'code': 'original', 'label': 'Original', 'icon': Icons.restore_rounded},
+      {'code': 'en', 'label': 'English', 'icon': Icons.language_rounded},
+      {'code': 'si', 'label': 'සිංහල', 'icon': Icons.translate_rounded},
+      {'code': 'ta', 'label': 'தமிழ்', 'icon': Icons.translate_rounded},
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome_rounded, color: AppColors.accent, size: 16),
+              const SizedBox(width: 8),
+              const Text(
+                'Translate with Gemini AI',
+                style: TextStyle(
+                  color: AppColors.accent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.4,
+                ),
+              ),
+              const Spacer(),
+              if (_isTranslating)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: options.map((opt) {
+              final isSelected = _selectedLang == opt['code'];
+              return ChoiceChip(
+                avatar: Icon(
+                  opt['icon'] as IconData,
+                  size: 14,
+                  color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+                ),
+                label: Text(
+                  opt['label'] as String,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                  ),
+                ),
+                selected: isSelected,
+                selectedColor: AppColors.accent,
+                backgroundColor: AppColors.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(
+                    color: isSelected ? AppColors.accent : AppColors.border,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                visualDensity: VisualDensity.compact,
+                onSelected: _isTranslating
+                    ? null
+                    : (selected) {
+                        if (selected) {
+                          _translateContent(
+                            opt['code'] as String,
+                            originalTitle,
+                            originalDescription,
+                          );
+                        }
+                      },
+              );
+            }).toList(),
+          ),
+          if (_selectedLang != 'original' && !_isTranslating) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 13),
+                const SizedBox(width: 6),
+                Text(
+                  'Showing ${_selectedLang == "si" ? "Sinhala (සිංහල)" : _selectedLang == "ta" ? "Tamil (தமிழ்)" : "English"} translation',
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

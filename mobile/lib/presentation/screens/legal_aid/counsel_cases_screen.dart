@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/legal_aid_repository.dart';
 import 'lawyer_case_detail_screen.dart';
