@@ -82,11 +82,18 @@ const caseSchema = new mongoose.Schema(
         'evidence_requested',
         'referred_to_ngo',
         'legal_action_initiated',
+        'awaiting_lawyer_selection',
         'resolved',
         'closed',
         'rejected',
       ],
       default: 'submitted',
+    },
+
+    rejectionReason: {
+      type: String,
+      default: null,
+      trim: true,
     },
 
     priority: {

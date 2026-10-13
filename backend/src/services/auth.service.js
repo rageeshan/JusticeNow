@@ -1,27 +1,38 @@
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
+const { admin } = require('../config/firebase');
 const User = require('../models/User.model');
 const AuditLog = require('../models/AuditLog.model');
-const { admin } = require('../config/firebase');
 
 /**
- * Generate a JWT for a given user
+ * Generate a JWT for an authenticated user
  */
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+  return jwt.sign({ userId, id: userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   });
 };
 
 /**
- * Create an anonymous session for a citizen who does not want to register
+ * Create an anonymous session for a citizen
  */
 const createAnonymousSession = async () => {
-  const alias = `User_${uuidv4().slice(0, 8).toUpperCase()}`;
+  const alias = `Citizen-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
   const user = await User.create({
     alias,
-    role: 'anonymous',
+    role: 'citizen',
+    isAnonymous: true,
+    isVerified: true,
+    approvalStatus: 'approved',
   });
+
+  await AuditLog.create({
+    action: 'user.anonymous_created',
+    performedBy: user._id,
+    targetResource: 'User',
+    targetId: user._id,
+  });
+
   const token = generateToken(user._id);
   return { user, token };
 };
@@ -52,17 +63,25 @@ const registerCitizen = async ({
     err.statusCode = 409;
     throw err;
   }
-  // Default to citizen if no valid role provided
-  const validRoles = ['citizen', 'police_officer', 'lawyer', 'admin'];
+
+  const validRoles = [
+    'citizen',
+    'police_officer',
+    'officer',
+    'lawyer',
+    'legal_practitioner',
+    'ngo',
+    'admin',
+  ];
   const userRole = validRoles.includes(role) ? role : 'citizen';
 
-  const isPendingRole = ['police_officer', 'lawyer'].includes(userRole);
+  const isPendingRole = ['police_officer', 'officer', 'lawyer', 'legal_practitioner', 'ngo'].includes(userRole);
   const approvalStatus = isPendingRole ? 'pending' : 'approved';
   const isVerified = !isPendingRole;
 
   const user = await User.create({
     email,
-    passwordHash: password, // pre-save hook hashes it
+    passwordHash: password, // Pre-save hook handles hashing
     role: userRole,
     approvalStatus,
     isVerified,
@@ -107,17 +126,19 @@ const registerCitizen = async ({
  * Login user with email/password
  */
 const loginCitizen = async ({ email, password }) => {
-  const user = await User.findOne({ email, role: { $in: ['citizen', 'police_officer', 'lawyer', 'admin'] } });
+  const user = await User.findOne({ email });
   if (!user || !(await user.comparePassword(password))) {
     const err = new Error('Invalid email or password');
     err.statusCode = 401;
     throw err;
   }
+
   if (!user.isActive) {
     const err = new Error('Account deactivated');
     err.statusCode = 403;
     throw err;
   }
+
   if (user.approvalStatus === 'pending') {
     const err = new Error('Your account is under review. An administrator must verify your account before you can log in.');
     err.statusCode = 403;
@@ -145,6 +166,7 @@ const loginCitizen = async ({ email, password }) => {
   user.lastLogin = new Date();
   await user.save();
   const token = generateToken(user._id);
+
   return { user, token };
 };
 
@@ -156,17 +178,19 @@ const verifyFirebaseAndGetUser = async (firebaseToken) => {
   let user = await User.findOne({ firebaseUid: decoded.uid });
 
   if (!user) {
-    // First login — create account
+    // First login — create pending staff account
     user = await User.create({
       email: decoded.email,
       firebaseUid: decoded.uid,
-      role: 'lawyer', // Default role for Firebase-authenticated staff
-      isVerified: decoded.email_verified || false,
+      role: 'lawyer',
+      isVerified: false,
+      approvalStatus: 'pending',
       profile: {
         fullName: decoded.name || null,
         avatarUrl: decoded.picture || null,
       },
     });
+
     await AuditLog.create({
       action: 'user.registered_firebase',
       performedBy: user._id,
@@ -184,6 +208,7 @@ const verifyFirebaseAndGetUser = async (firebaseToken) => {
   user.lastLogin = new Date();
   await user.save();
   const token = generateToken(user._id);
+
   return { user, token };
 };
 

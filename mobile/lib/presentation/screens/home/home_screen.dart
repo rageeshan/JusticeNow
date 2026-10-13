@@ -40,6 +40,11 @@ class HomeScreen extends ConsumerWidget {
         backgroundColor: AppColors.primaryDark,
         actions: [
           IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: AppColors.accent),
+            tooltip: 'Notifications',
+            onPressed: () => context.push(AppRoutes.notifications),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
             tooltip: 'Logout',
             onPressed: () async {

@@ -28,6 +28,7 @@ const caseValidators = {
     param('id').isMongoId().withMessage('Invalid case ID'),
     body('status').notEmpty().withMessage('Status is required'),
     body('note').optional().isString(),
+    body('reason').optional().isString(),
     validate,
   ],
 };
@@ -37,6 +38,10 @@ const authValidators = {
     body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
     body('fullName').optional().trim(),
+    body('role')
+      .optional()
+      .isIn(['citizen', 'police_officer', 'lawyer', 'admin'])
+      .withMessage('Invalid role specified'),
     body('phone').optional().trim(),
     body('nic').optional().trim(),
     body('gender')
@@ -45,23 +50,11 @@ const authValidators = {
       .withMessage('Gender must be Male, Female, or Other'),
     body('province').optional().trim(),
     body('district').optional().trim(),
-    body('policeId')
-      .if(body('role').equals('police_officer'))
-      .trim()
-      .notEmpty()
-      .withMessage('Police ID is required for police officer registration'),
-    body('courtNumber')
-      .optional()
-      .trim(),
-    body('lawyerId')
-      .optional()
-      .trim(),
-    body('certificateUrl')
-      .optional()
-      .trim(),
-    body('aboutMe')
-      .optional()
-      .trim(),
+    body('policeId').optional().trim(),
+    body('courtNumber').optional().trim(),
+    body('lawyerId').optional().trim(),
+    body('certificateUrl').optional().trim(),
+    body('aboutMe').optional().trim(),
     body('preferredLanguage')
       .optional()
       .isIn(['Sinhala', 'Tamil', 'English'])

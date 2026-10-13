@@ -95,10 +95,10 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Your incident has been submitted anonymously. Please save this reference code to check case updates:',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.black70),
+              style: TextStyle(fontSize: 14, color: Colors.black.withValues(alpha: 0.7)),
             ),
             const SizedBox(height: 20),
             Container(

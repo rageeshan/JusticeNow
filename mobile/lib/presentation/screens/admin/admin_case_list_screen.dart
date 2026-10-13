@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/case_repository.dart';
@@ -18,25 +17,26 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
 
   List<dynamic> _cases = [];
-  bool _isLoading = false;
+  bool _isLoading = true;
   String? _errorMessage;
 
-  String? _selectedStatus;
-  String? _selectedCategory;
-
-  final List<String> _statuses = [
+  // Filter tabs / sort: Today | This Week | Last Week | This Month | Last Month | All
+  final List<String> _dateFilters = [
+    'Today',
+    'This Week',
+    'Last Week',
+    'This Month',
+    'Last Month',
     'All',
-    'submitted',
-    'verified',
-    'under_investigation',
-    'legal_aid_assigned',
-    'closed',
   ];
+  String _selectedDateFilter = 'All';
 
   @override
   void initState() {
     super.initState();
-    _fetchCases();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fetchCases();
+    });
   }
 
   @override
@@ -45,21 +45,38 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
     super.dispose();
   }
 
+  String _mapFilterToParam(String filter) {
+    switch (filter) {
+      case 'Today':
+        return 'today';
+      case 'This Week':
+        return 'this_week';
+      case 'Last Week':
+        return 'last_week';
+      case 'This Month':
+        return 'this_month';
+      case 'Last Month':
+        return 'last_month';
+      case 'All':
+      default:
+        return 'all';
+    }
+  }
+
   Future<void> _fetchCases() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     final search = _searchCtrl.text.trim();
-    final status = _selectedStatus == null || _selectedStatus == 'All' ? null : _selectedStatus;
-    final category = _selectedCategory == null || _selectedCategory == 'All' ? null : _selectedCategory;
+    final dateParam = _mapFilterToParam(_selectedDateFilter);
 
     try {
       final res = await _caseRepo.getCases(
         search: search.isNotEmpty ? search : null,
-        status: status,
-        category: category,
+        dateFilter: dateParam,
       );
       if (mounted) {
         setState(() {
@@ -81,7 +98,7 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
     if (dateStr == null) return 'N/A';
     try {
       final date = DateTime.parse(dateStr).toLocal();
-      return DateFormat('MMM dd, yyyy').format(date);
+      return DateFormat('MMM dd, yyyy • hh:mm a').format(date);
     } catch (_) {
       return dateStr;
     }
@@ -89,22 +106,25 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
 
   Color _statusColor(String? status) {
     switch (status) {
-      case 'verified':
-        return AppColors.info;
-      case 'under_investigation':
-        return AppColors.warning;
-      case 'legal_aid_assigned':
+      case 'awaiting_lawyer_selection':
         return AppColors.accent;
+      case 'rejected':
+        return AppColors.error;
+      case 'resolved':
       case 'closed':
         return AppColors.success;
+      case 'investigating':
+      case 'under_review':
+        return AppColors.warning;
       case 'submitted':
       default:
-        return AppColors.textMuted;
+        return AppColors.info;
     }
   }
 
   String _statusLabel(String? status) {
-    if (status == null) return 'Submitted';
+    if (status == null) return 'SUBMITTED';
+    if (status == 'awaiting_lawyer_selection') return 'AWAITING LAWYER';
     return status.replaceAll('_', ' ').toUpperCase();
   }
 
@@ -113,7 +133,7 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Case Details Registry'),
+        title: const Text('Case Reports'),
         backgroundColor: AppColors.primaryDark,
         elevation: 0,
         actions: [
@@ -126,22 +146,23 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
       ),
       body: Column(
         children: [
-          // Search & Filter Header
+          // ── Top Bar: Search & Filter Tabs ──
           Container(
-            padding: const EdgeInsets.all(16),
-            color: AppColors.surface,
+            color: AppColors.primaryDark,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Search Input
                 TextField(
                   controller: _searchCtrl,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'Search cases by title, case number, or city...',
-                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
+                    hintText: 'Search by case title or reference...',
+                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 20),
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear_rounded, color: AppColors.textMuted),
+                            icon: const Icon(Icons.clear_rounded, color: AppColors.textMuted, size: 18),
                             onPressed: () {
                               _searchCtrl.clear();
                               _fetchCases();
@@ -154,73 +175,62 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Filters Row
-                Row(
-                  children: [
-                    // Status Filter
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedStatus ?? 'All',
-                        decoration: const InputDecoration(
-                          labelText: 'Status',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        dropdownColor: AppColors.surface,
-                        items: _statuses.map((s) {
-                          return DropdownMenuItem(value: s, child: Text(_statusLabel(s)));
-                        }).toList(),
-                        onChanged: (val) {
-                          setState(() => _selectedStatus = val);
-                          _fetchCases();
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Category Filter
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedCategory ?? 'All',
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        dropdownColor: AppColors.surface,
-                        items: ['All', ...AppConstants.caseCategories.values].map((String c) {
-                          return DropdownMenuItem<String>(
-                            value: c,
-                            child: Text(
-                              c == 'All' ? 'ALL CATEGORIES' : c,
-                              overflow: TextOverflow.ellipsis,
+                // Filter Tabs (Horizontal scrollable chips)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _dateFilters.map((filter) {
+                      final isSelected = _selectedDateFilter == filter;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: ChoiceChip(
+                          label: Text(
+                            filter,
+                            style: TextStyle(
+                              color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                              fontSize: 12,
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          setState(() => _selectedCategory = val);
-                          _fetchCases();
-                        },
-                      ),
-                    ),
-                  ],
+                          ),
+                          selected: isSelected,
+                          selectedColor: AppColors.accent,
+                          backgroundColor: AppColors.surface,
+                          side: BorderSide(
+                            color: isSelected ? AppColors.accent : AppColors.border,
+                          ),
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() => _selectedDateFilter = filter);
+                              _fetchCases();
+                            }
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ],
             ),
           ),
 
-          // Case List
+          // ── List of Cases ──
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _errorMessage != null
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
-                            const SizedBox(height: 12),
-                            Text(_errorMessage!, style: const TextStyle(color: AppColors.error)),
-                            const SizedBox(height: 16),
-                            ElevatedButton(onPressed: _fetchCases, child: const Text('Retry')),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
+                              const SizedBox(height: 12),
+                              Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.error)),
+                              const SizedBox(height: 16),
+                              ElevatedButton(onPressed: _fetchCases, child: const Text('Retry')),
+                            ],
+                          ),
                         ),
                       )
                     : _cases.isEmpty
@@ -231,18 +241,14 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                                 const Icon(Icons.folder_open_rounded, color: AppColors.textMuted, size: 64),
                                 const SizedBox(height: 16),
                                 const Text(
-                                  'No cases found',
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  'No case reports found',
+                                  style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  _searchCtrl.text.isNotEmpty
-                                      ? 'Try adjusting your search filters'
-                                      : 'No reported cases match the selected filters',
+                                  _searchCtrl.text.isNotEmpty || _selectedDateFilter != 'All'
+                                      ? 'No cases match "$_selectedDateFilter" filter'
+                                      : 'No reports have been submitted yet.',
                                   style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                                 ),
                               ],
@@ -253,136 +259,182 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                             child: ListView.separated(
                               padding: const EdgeInsets.all(16),
                               itemCount: _cases.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                              separatorBuilder: (_, __) => const SizedBox(height: 14),
                               itemBuilder: (context, index) {
                                 final c = _cases[index] as Map<String, dynamic>;
                                 final caseId = c['_id'] as String;
-                                final title = c['title'] ?? 'Untitled Case';
-                                final caseNumber = c['caseNumber'] ?? '';
-                                final category = c['category'] ?? 'General Incident';
-                                final status = c['status'] as String?;
+                                final title = c['title'] ?? 'Incident Report';
                                 final createdAt = c['createdAt'] as String?;
-                                final location = c['location'] as Map<String, dynamic>? ?? {};
-                                final city = location['city'] ?? 'Location not specified';
+                                final status = c['status'] as String?;
+                                final refNumber = c['referenceNumber'] ?? '';
 
-                                final statusCol = _statusColor(status);
+                                // Citizen Info
+                                final reportedBy = c['reportedBy'] as Map<String, dynamic>? ?? {};
+                                final profile = reportedBy['profile'] as Map<String, dynamic>? ?? {};
+                                final citizenName = profile['fullName'] ?? reportedBy['alias'] ?? 'Anonymous Citizen';
+                                final citizenNIC = profile['nic'] ?? 'Not provided';
 
-                                return Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: () {
-                                      context.push('/cases/$caseId');
-                                    },
-                                    borderRadius: BorderRadius.circular(14),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.surface,
-                                        borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(color: AppColors.border),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // Top Row: Category & Status Badge
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  category,
-                                                  style: const TextStyle(
-                                                    color: AppColors.accent,
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Header Row: Reference number & Status Badge
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              refNumber,
+                                              style: const TextStyle(
+                                                color: AppColors.textMuted,
+                                                fontSize: 12,
+                                                fontFamily: 'monospace',
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: _statusColor(status).withValues(alpha: 0.12),
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: _statusColor(status).withValues(alpha: 0.35)),
+                                              ),
+                                              child: Text(
+                                                _statusLabel(status),
+                                                style: TextStyle(
+                                                  color: _statusColor(status),
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                decoration: BoxDecoration(
-                                                  color: statusCol.withValues(alpha: 0.12),
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  border: Border.all(color: statusCol.withValues(alpha: 0.4)),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+
+                                        // ── 1. Citizen's Name ──
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.person_outline_rounded, color: AppColors.accent, size: 16),
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              "Citizen: ",
+                                              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                                            ),
+                                            Expanded(
+                                              child: Text(
+                                                citizenName,
+                                                style: const TextStyle(
+                                                  color: AppColors.textPrimary,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
-                                                child: Text(
-                                                  _statusLabel(status),
-                                                  style: TextStyle(
-                                                    color: statusCol,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                            ],
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+
+                                        // ── 2. Citizen's NIC ──
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.badge_outlined, color: AppColors.info, size: 16),
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              "NIC: ",
+                                              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                                            ),
+                                            Text(
+                                              citizenNIC,
+                                              style: const TextStyle(
+                                                color: AppColors.textPrimary,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+
+                                        // ── 3. Date submitted ──
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.calendar_today_rounded, color: AppColors.textMuted, size: 15),
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              "Submitted: ",
+                                              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                                            ),
+                                            Text(
+                                              _formatDate(createdAt),
+                                              style: const TextStyle(
+                                                color: AppColors.textSecondary,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+
+                                        // ── 4. Report title (short summary, 1 line) ──
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.surfaceVariant,
+                                            borderRadius: BorderRadius.circular(8),
                                           ),
-                                          const SizedBox(height: 8),
-
-                                          // Case Title
-                                          Text(
+                                          child: Text(
                                             title,
                                             style: const TextStyle(
                                               color: AppColors.textPrimary,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 14),
+
+                                        const Divider(height: 1, color: AppColors.border),
+                                        const SizedBox(height: 12),
+
+                                        // ── 5. View Case Details button ──
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton.icon(
+                                            onPressed: () async {
+                                              await context.push(
+                                                '${AppRoutes.adminCases}/$caseId',
+                                                extra: c,
+                                              );
+                                              if (mounted) _fetchCases();
+                                            },
+                                            icon: const Icon(Icons.visibility_rounded, size: 16),
+                                            label: const Text('View Case Details'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.primaryDark,
+                                              foregroundColor: AppColors.accent,
+                                              minimumSize: Size.zero,
+                                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                              padding: const EdgeInsets.symmetric(vertical: 10),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                side: const BorderSide(color: AppColors.accent),
+                                              ),
                                             ),
                                           ),
-                                          const SizedBox(height: 6),
-
-                                          // Case Number & Location
-                                          Row(
-                                            children: [
-                                              if (caseNumber.isNotEmpty) ...[
-                                                Text(
-                                                  caseNumber,
-                                                  style: const TextStyle(
-                                                    color: AppColors.textMuted,
-                                                    fontSize: 12,
-                                                    fontFamily: 'monospace',
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                const Text('•', style: TextStyle(color: AppColors.textMuted)),
-                                                const SizedBox(width: 8),
-                                              ],
-                                              const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
-                                              const SizedBox(width: 4),
-                                              Expanded(
-                                                child: Text(
-                                                  city,
-                                                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 10),
-                                          const Divider(height: 1, color: AppColors.border),
-                                          const SizedBox(height: 8),
-
-                                          // Date Submitted & Arrow
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'Reported: ${_formatDate(createdAt)}',
-                                                style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
-                                              ),
-                                              const Row(
-                                                children: [
-                                                  Text(
-                                                    'View Full Details',
-                                                    style: TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.w600),
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                  Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.accent),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 );

@@ -6,7 +6,10 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
 const { initFirebase } = require('./src/config/firebase');
+
+// Route Imports (Consistent src/ pathing)
 const authRoutes = require('./src/routes/auth.routes');
+const adminUserRoutes = require('./src/routes/admin/userApproval.routes');
 const caseRoutes = require('./src/routes/case.routes');
 const legalAidRoutes = require('./src/routes/legalAid.routes');
 const analyticsRoutes = require('./src/routes/analytics.routes');
@@ -25,7 +28,9 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+    origin: process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+      : '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
@@ -70,9 +75,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // ──────────────────────────────────────────────
-// API Routes
+// API Routes (All routes mounted BEFORE error handlers)
 // ──────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminUserRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/legal-aid', legalAidRoutes);
 app.use('/api/analytics', analyticsRoutes);
@@ -80,7 +86,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // ──────────────────────────────────────────────
-// Error Handling (must be last)
+// Error Handling (Must be last)
 // ──────────────────────────────────────────────
 app.use(notFound);
 app.use(errorHandler);

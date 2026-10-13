@@ -17,6 +17,8 @@ import '../../presentation/screens/admin/admin_dashboard_screen.dart';
 import '../../presentation/screens/admin/admin_verifications_screen.dart';
 import '../../presentation/screens/admin/admin_user_detail_screen.dart';
 import '../../presentation/screens/admin/admin_case_list_screen.dart';
+import '../../presentation/screens/admin/admin_case_detail_screen.dart';
+import '../../presentation/screens/notifications/notifications_screen.dart';
 
 /// Named route constants
 class AppRoutes {
@@ -34,10 +36,12 @@ class AppRoutes {
   static const caseDetail = '/cases/:id';
   static const legalAid = '/legal-aid';
   static const dashboard = '/dashboard';
+  static const notifications = '/notifications';
   static const adminDashboard = '/admin/dashboard';
   static const adminVerifications = '/admin/verifications';
   static const adminUserDetail = '/admin/verifications/:id';
   static const adminCases = '/admin/cases';
+  static const adminCaseDetail = '/admin/cases/:id';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -82,6 +86,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HomeScreen(),
       ),
       GoRoute(
+        path: AppRoutes.notifications,
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.myCases,
         builder: (context, state) => const MyCasesScreen(),
       ),
@@ -121,6 +129,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.adminCases,
         builder: (context, state) => const AdminCaseListScreen(),
+      ),
+      GoRoute(
+        path: '${AppRoutes.adminCases}/:id',
+        builder: (context, state) => AdminCaseDetailScreen(
+          caseId: state.pathParameters['id']!,
+          initialCase: state.extra as Map<String, dynamic>?,
+        ),
       ),
     ],
   );
