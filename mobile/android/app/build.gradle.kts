@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.justicenow.justice_now"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

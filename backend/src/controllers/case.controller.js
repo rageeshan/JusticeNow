@@ -29,7 +29,7 @@ const createCase = async (req, res, next) => {
  */
 const getCases = async (req, res, next) => {
   try {
-    const { page, limit, status, category, priority, search } = req.query;
+    const { page, limit, status, category, priority, search, dateFilter } = req.query;
     const result = await caseService.getCases({
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 20,
@@ -37,6 +37,7 @@ const getCases = async (req, res, next) => {
       category,
       priority,
       search,
+      dateFilter,
     });
     return sendSuccess(res, result, 'Cases retrieved');
   } catch (err) {

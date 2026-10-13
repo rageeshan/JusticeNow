@@ -40,6 +40,11 @@ class HomeScreen extends ConsumerWidget {
         backgroundColor: AppColors.primaryDark,
         actions: [
           IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: AppColors.accent),
+            tooltip: 'Notifications',
+            onPressed: () => context.push(AppRoutes.notifications),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
             tooltip: 'Logout',
             onPressed: () async {
@@ -114,6 +119,18 @@ class HomeScreen extends ConsumerWidget {
                 onTap: () => context.push(AppRoutes.legalAid),
               ),
               const SizedBox(height: 12),
+
+              // Admin: Portal & Verification
+              if (role == 'admin') ...[
+                _ActionCard(
+                  icon: Icons.admin_panel_settings_rounded,
+                  title: 'Admin Dashboard',
+                  subtitle: 'Manage verifications, case registry, and hotspot analytics',
+                  color: AppColors.accent,
+                  onTap: () => context.push(AppRoutes.adminDashboard),
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // Dashboard — only for police officers and admins
               if (role == 'police_officer' || role == 'admin') ...[

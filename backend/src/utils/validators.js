@@ -28,6 +28,7 @@ const caseValidators = {
     param('id').isMongoId().withMessage('Invalid case ID'),
     body('status').notEmpty().withMessage('Status is required'),
     body('note').optional().isString(),
+    body('reason').optional().isString(),
     validate,
   ],
 };
@@ -36,18 +37,28 @@ const authValidators = {
   register: [
     body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-    body('fullName').optional().trim().notEmpty().withMessage('Full name cannot be empty'),
+    body('fullName').optional().trim(),
     body('role')
       .optional()
-      .isIn([
-        'citizen',
-        'police_officer',
-        'officer',
-        'lawyer',
-        'legal_practitioner',
-        'ngo',
-      ])
+      .isIn(['citizen', 'police_officer', 'lawyer', 'admin'])
       .withMessage('Invalid role specified'),
+    body('phone').optional().trim(),
+    body('nic').optional().trim(),
+    body('gender')
+      .optional()
+      .isIn(['Male', 'Female', 'Other'])
+      .withMessage('Gender must be Male, Female, or Other'),
+    body('province').optional().trim(),
+    body('district').optional().trim(),
+    body('policeId').optional().trim(),
+    body('courtNumber').optional().trim(),
+    body('lawyerId').optional().trim(),
+    body('certificateUrl').optional().trim(),
+    body('aboutMe').optional().trim(),
+    body('preferredLanguage')
+      .optional()
+      .isIn(['Sinhala', 'Tamil', 'English'])
+      .withMessage('Preferred Language must be Sinhala, Tamil, or English'),
     validate,
   ],
   login: [
@@ -57,4 +68,15 @@ const authValidators = {
   ],
 };
 
-module.exports = { validate, caseValidators, authValidators };
+const adminValidators = {
+  updateStatus: [
+    param('id').isMongoId().withMessage('Invalid user ID'),
+    body('status')
+      .isIn(['approved', 'rejected'])
+      .withMessage('Status must be either approved or rejected'),
+    body('reason').optional().trim(),
+    validate,
+  ],
+};
+
+module.exports = { validate, caseValidators, authValidators, adminValidators };

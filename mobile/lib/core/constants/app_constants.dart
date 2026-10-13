@@ -6,6 +6,7 @@ class AppConstants {
   // API
 // API
   static final String baseUrl = _getBaseUrl();
+  static String get apiBaseUrl => baseUrl;
 
   static String _getBaseUrl() {
     const configuredUrl = String.fromEnvironment(

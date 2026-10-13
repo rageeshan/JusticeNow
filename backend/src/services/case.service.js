@@ -1,5 +1,6 @@
 const Case = require('../models/Case.model');
 const AuditLog = require('../models/AuditLog.model');
+const Notification = require('../models/Notification.model');
 
 /**
  * Generate a unique human-readable reference number
@@ -10,6 +11,41 @@ const generateReferenceNumber = async () => {
   const count = await Case.countDocuments();
   const padded = String(count + 1).padStart(5, '0');
   return `JN-${year}-${padded}`;
+};
+
+/**
+ * Helper to compute date range filter
+ */
+const getDateFilterQuery = (filter) => {
+  const now = new Date();
+  if (filter === 'today') {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    return { $gte: start, $lte: end };
+  }
+  if (filter === 'this_week') {
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    const start = new Date(now.getFullYear(), now.getMonth(), diff, 0, 0, 0, 0);
+    return { $gte: start, $lte: now };
+  }
+  if (filter === 'last_week') {
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const start = new Date(now.getFullYear(), now.getMonth(), diff - 7, 0, 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth(), diff - 1, 23, 59, 59, 999);
+    return { $gte: start, $lte: end };
+  }
+  if (filter === 'this_month') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    return { $gte: start, $lte: now };
+  }
+  if (filter === 'last_month') {
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    return { $gte: start, $lte: end };
+  }
+  return null;
 };
 
 /**
@@ -46,13 +82,26 @@ const createCase = async (data, reportedBy) => {
 /**
  * Get paginated list of cases (for officers/admins)
  */
-const getCases = async ({ page = 1, limit = 20, status, category, priority, search } = {}) => {
+const getCases = async ({ page = 1, limit = 20, status, category, priority, search, dateFilter } = {}) => {
   const query = { isDeleted: false };
 
-  if (status) query.status = status;
-  if (category) query.category = category;
-  if (priority) query.priority = priority;
-  if (search) query.$text = { $search: search };
+  if (status && status !== 'All') query.status = status;
+  if (category && category !== 'All') query.category = category;
+  if (priority && priority !== 'All') query.priority = priority;
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+      { referenceNumber: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  if (dateFilter && dateFilter !== 'all') {
+    const dateRange = getDateFilterQuery(dateFilter);
+    if (dateRange) {
+      query.createdAt = dateRange;
+    }
+  }
 
   const skip = (page - 1) * limit;
   const [cases, total] = await Promise.all([
@@ -60,8 +109,10 @@ const getCases = async ({ page = 1, limit = 20, status, category, priority, sear
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
+      .populate('reportedBy', 'alias email role profile')
       .populate('assignedOfficer', 'profile.fullName email')
-      .populate('assignedOrganization', 'name type'),
+      .populate('assignedOrganization', 'name type')
+      .populate('evidence'),
     Case.countDocuments(query),
   ]);
 
@@ -81,16 +132,16 @@ const getCases = async ({ page = 1, limit = 20, status, category, priority, sear
  */
 const getCaseById = async (id) => {
   return Case.findOne({ _id: id, isDeleted: false })
-    .populate('reportedBy', 'alias email role')
+    .populate('reportedBy', 'alias email role profile')
     .populate('assignedOfficer', 'profile.fullName email')
     .populate('assignedOrganization', 'name type contact')
     .populate('evidence');
 };
 
 /**
- * Update case status with timeline event
+ * Update case status with timeline event and notifications
  */
-const updateCaseStatus = async (id, { status, note }, updatedBy) => {
+const updateCaseStatus = async (id, { status, note, reason }, updatedBy) => {
   const caseDoc = await Case.findOne({ _id: id, isDeleted: false });
   if (!caseDoc) {
     const err = new Error('Case not found');
@@ -98,19 +149,60 @@ const updateCaseStatus = async (id, { status, note }, updatedBy) => {
     throw err;
   }
 
+  const previousStatus = caseDoc.status;
   caseDoc.status = status;
-  caseDoc.timeline.push({ status, note, updatedBy: updatedBy._id });
+  if (status === 'rejected') {
+    caseDoc.rejectionReason = reason || note || 'Case requirements not met';
+  }
+
+  caseDoc.timeline.push({
+    status,
+    note: note || reason || `Status updated to ${status}`,
+    updatedBy: updatedBy._id,
+  });
   await caseDoc.save();
+
+  // Create citizen notification for assign to lawyer or rejection
+  if (caseDoc.reportedBy) {
+    if (status === 'awaiting_lawyer_selection') {
+      await Notification.create({
+        recipient: caseDoc.reportedBy,
+        case: caseDoc._id,
+        title: 'Thank you for submitting your report.',
+        message:
+          'Your case has been reviewed and approved by our admin team. You can now book a lawyer related to your area from here.',
+        type: 'awaiting_lawyer_selection',
+        actionRoute: '/legal-aid',
+        actionText: 'Find a Lawyer',
+      });
+    } else if (status === 'rejected') {
+      await Notification.create({
+        recipient: caseDoc.reportedBy,
+        case: caseDoc._id,
+        title: 'Your report has been reviewed.',
+        message: `Unfortunately, it was not approved.\nReason: ${reason || note || 'Case requirements not met'}`,
+        type: 'case_rejected',
+        actionRoute: null,
+        actionText: null,
+      });
+    }
+  }
 
   await AuditLog.create({
     action: 'case.status_changed',
     performedBy: updatedBy._id,
     targetResource: 'Case',
     targetId: caseDoc._id,
-    metadata: { previousStatus: caseDoc.status, newStatus: status },
+    metadata: { previousStatus, newStatus: status, reason: reason || null },
   });
 
-  return caseDoc;
+  const populated = await Case.findById(caseDoc._id)
+    .populate('reportedBy', 'alias email role profile')
+    .populate('assignedOfficer', 'profile.fullName email')
+    .populate('assignedOrganization', 'name type contact')
+    .populate('evidence');
+
+  return populated || caseDoc;
 };
 
 /**
@@ -120,7 +212,7 @@ const getCasesByReporter = async (userId, { page = 1, limit = 20 } = {}) => {
   const query = { reportedBy: userId, isDeleted: false };
   const skip = (page - 1) * limit;
   const [cases, total] = await Promise.all([
-    Case.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).select('-internalNotes'),
+    Case.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).select('-internalNotes').populate('evidence'),
     Case.countDocuments(query),
   ]);
   return { cases, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };

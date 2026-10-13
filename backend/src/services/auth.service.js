@@ -1,37 +1,62 @@
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
+const { admin } = require('../config/firebase');
 const User = require('../models/User.model');
 const AuditLog = require('../models/AuditLog.model');
-const { admin } = require('../config/firebase');
 
 /**
- * Generate a JWT for a given user
+ * Generate a JWT for an authenticated user
  */
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+  return jwt.sign({ userId, id: userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   });
 };
 
 /**
- * Create an anonymous session for a citizen who does not want to register
+ * Create an anonymous session for a citizen
  */
 const createAnonymousSession = async () => {
-  const alias = `User_${uuidv4().slice(0, 8).toUpperCase()}`;
+  const alias = `Citizen-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
   const user = await User.create({
     alias,
-    role: 'anonymous',
+    role: 'citizen',
+    isAnonymous: true,
     isVerified: true,
-    verificationStatus: 'approved',
+    approvalStatus: 'approved',
   });
+
+  await AuditLog.create({
+    action: 'user.anonymous_created',
+    performedBy: user._id,
+    targetResource: 'User',
+    targetId: user._id,
+  });
+
   const token = generateToken(user._id);
   return { user, token };
 };
 
 /**
- * Register a user with email/password, name and role
+ * Register a user with email/password, name, role, and role-specific details
  */
-const registerCitizen = async ({ email, password, fullName, role }) => {
+const registerCitizen = async ({
+  email,
+  password,
+  fullName,
+  role,
+  phone,
+  nic,
+  gender,
+  province,
+  district,
+  policeId,
+  lawyerId,
+  courtNumber,
+  certificateUrl,
+  aboutMe,
+  preferredLanguage,
+}) => {
   const existing = await User.findOne({ email });
   if (existing) {
     const err = new Error('Email already in use');
@@ -50,25 +75,31 @@ const registerCitizen = async ({ email, password, fullName, role }) => {
   ];
   const userRole = validRoles.includes(role) ? role : 'citizen';
 
-  // Determine if role requires manual admin verification
-  const requiresApproval = [
-    'police_officer',
-    'officer',
-    'lawyer',
-    'legal_practitioner',
-    'ngo',
-  ].includes(userRole);
+  const isPendingRole = ['police_officer', 'officer', 'lawyer', 'legal_practitioner', 'ngo'].includes(userRole);
+  const approvalStatus = isPendingRole ? 'pending' : 'approved';
+  const isVerified = !isPendingRole;
 
   const user = await User.create({
     email,
     passwordHash: password, // Pre-save hook handles hashing
     role: userRole,
-    profile: { fullName: fullName || null },
-    isVerified: !requiresApproval,
-    verificationStatus: requiresApproval ? 'pending' : 'approved',
+    approvalStatus,
+    isVerified,
+    profile: {
+      fullName: fullName || null,
+      phone: phone || null,
+      nic: nic || null,
+      gender: gender || null,
+      province: province || null,
+      district: district || null,
+      policeId: policeId || null,
+      courtNumber: courtNumber || null,
+      lawyerId: lawyerId || courtNumber || null,
+      certificateUrl: certificateUrl || null,
+      aboutMe: aboutMe || null,
+      preferredLanguage: preferredLanguage || null,
+    },
   });
-
-  const token = generateToken(user._id);
 
   await AuditLog.create({
     action: 'user.registered',
@@ -77,7 +108,18 @@ const registerCitizen = async ({ email, password, fullName, role }) => {
     targetId: user._id,
   });
 
-  return { user, token };
+  // Police officers and lawyers require admin approval before accessing the platform
+  if (isPendingRole) {
+    return {
+      user,
+      token: null,
+      isPending: true,
+      message: 'Registration submitted successfully. Your account is pending administrator verification.',
+    };
+  }
+
+  const token = generateToken(user._id);
+  return { user, token, isPending: false, message: 'Registration successful' };
 };
 
 /**
@@ -97,18 +139,28 @@ const loginCitizen = async ({ email, password }) => {
     throw err;
   }
 
-  // Block unapproved professional accounts at login
-  if (['police_officer', 'officer', 'lawyer', 'legal_practitioner', 'ngo'].includes(user.role)) {
-    if (user.verificationStatus === 'pending') {
-      const err = new Error('Your account is pending admin approval');
-      err.statusCode = 403;
-      throw err;
-    }
-    if (user.verificationStatus === 'rejected') {
-      const err = new Error(`Account rejected: ${user.rejectionReason || 'Verification failed'}`);
-      err.statusCode = 403;
-      throw err;
-    }
+  if (user.approvalStatus === 'pending') {
+    const err = new Error('Your account is under review. An administrator must verify your account before you can log in.');
+    err.statusCode = 403;
+    err.code = 'ACCOUNT_PENDING';
+    err.data = {
+      approvalStatus: 'pending',
+      role: user.role,
+      email: user.email,
+    };
+    throw err;
+  }
+  if (user.approvalStatus === 'rejected') {
+    const err = new Error(user.rejectionReason ? `Account registration rejected: ${user.rejectionReason}` : 'Your account registration was rejected by an administrator.');
+    err.statusCode = 403;
+    err.code = 'ACCOUNT_REJECTED';
+    err.data = {
+      approvalStatus: 'rejected',
+      role: user.role,
+      email: user.email,
+      rejectionReason: user.rejectionReason || null,
+    };
+    throw err;
   }
 
   user.lastLogin = new Date();
@@ -132,7 +184,7 @@ const verifyFirebaseAndGetUser = async (firebaseToken) => {
       firebaseUid: decoded.uid,
       role: 'lawyer',
       isVerified: false,
-      verificationStatus: 'pending',
+      approvalStatus: 'pending',
       profile: {
         fullName: decoded.name || null,
         avatarUrl: decoded.picture || null,

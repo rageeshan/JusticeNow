@@ -30,7 +30,8 @@ const authenticate = async (req, res, next) => {
     if (!user) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        user = await User.findById(decoded.userId).select('-passwordHash');
+        const userId = decoded.userId || decoded.id;
+        user = await User.findById(userId).select('-passwordHash');
         if (user && user.isActive) req.authType = 'jwt';
       } catch {
         return sendUnauthorized(res, 'Invalid or expired token');
@@ -43,10 +44,11 @@ const authenticate = async (req, res, next) => {
 
     // Block pending or rejected professional accounts
     if (['police_officer', 'officer', 'lawyer', 'legal_practitioner', 'ngo'].includes(user.role)) {
-      if (user.verificationStatus === 'pending') {
+      const status = user.approvalStatus || user.verificationStatus;
+      if (status === 'pending') {
         return sendForbidden(res, 'Your account is pending admin approval');
       }
-      if (user.verificationStatus === 'rejected') {
+      if (status === 'rejected') {
         return sendForbidden(res, `Account rejected: ${user.rejectionReason || 'Verification failed'}`);
       }
     }

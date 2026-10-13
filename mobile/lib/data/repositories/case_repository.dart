@@ -19,7 +19,7 @@ class CaseRepository {
     return response.data['data'] as Map<String, dynamic>;
   }
 
-  /// Get all cases (officers/admins only)
+  /// Get all cases (officers/admins only) with optional filters including dateFilter
   Future<Map<String, dynamic>> getCases({
     int page = 1,
     int limit = 20,
@@ -27,22 +27,43 @@ class CaseRepository {
     String? category,
     String? priority,
     String? search,
+    String? dateFilter,
   }) async {
     final response = await _dio.get('/cases', queryParameters: {
       'page': page,
       'limit': limit,
-      if (status != null) 'status': status,
-      if (category != null) 'category': category,
-      if (priority != null) 'priority': priority,
-      if (search != null) 'search': search,
+      if (status != null && status != 'All') 'status': status,
+      if (category != null && category != 'All') 'category': category,
+      if (priority != null && priority != 'All') 'priority': priority,
+      if (search != null && search.isNotEmpty) 'search': search,
+      if (dateFilter != null && dateFilter != 'all') 'dateFilter': dateFilter,
     });
     return response.data['data'] as Map<String, dynamic>;
   }
 
-  /// Get a single case by ID
+  /// Get a single case by ID with full citizen details and populated evidence
   Future<Map<String, dynamic>> getCaseById(String id) async {
     final response = await _dio.get('/cases/$id');
     return response.data['data']['case'] as Map<String, dynamic>;
+  }
+
+  /// Update case status with optional note and reason (e.g., assign to lawyer, reject)
+  Future<Map<String, dynamic>> updateCaseStatus(
+    String caseId,
+    String status, {
+    String? note,
+    String? reason,
+  }) async {
+    final response = await _dio.patch('/cases/$caseId/status', data: {
+      'status': status,
+      if (note != null) 'note': note,
+      if (reason != null) 'reason': reason,
+    });
+    final caseData = response.data['data']?['case'];
+    if (caseData is Map) {
+      return Map<String, dynamic>.from(caseData);
+    }
+    return <String, dynamic>{};
   }
 
   /// Upload evidence files to a case
