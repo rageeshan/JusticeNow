@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/officer_cases_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -29,7 +30,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     await ref.read(authProvider.notifier).login(_emailCtrl.text.trim(), _passwordCtrl.text);
     if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
-      context.go(AppRoutes.myCases);
+      final user = ref.read(authProvider).user;
+      final role = user?['role'];
+      if (role == 'police_officer' || role == 'admin') {
+        ref.read(officerCasesProvider.notifier).fetchCases(force: true);
+        context.go(AppRoutes.officerHome);
+      } else {
+        context.go(AppRoutes.myCases);
+      }
+    }
+  }
+
+  Future<void> _loginAsOfficer() async {
+    _emailCtrl.text = 'sasa@2gmail.com';
+    _passwordCtrl.text = '12345678';
+    await ref.read(authProvider.notifier).login('sasa@2gmail.com', '12345678');
+    if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
+      ref.read(officerCasesProvider.notifier).fetchCases(force: true);
+      context.go(AppRoutes.officerHome);
     }
   }
 
@@ -147,6 +165,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  onPressed: authState.isLoading ? null : _loginAsOfficer,
+                  icon: const Icon(Icons.shield_rounded, size: 18, color: AppColors.accent),
+                  label: const Text(
+                    'Sign in as Case Officer (DB Account)',
+                    style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.accent.withValues(alpha: 0.5)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               ],
             ),

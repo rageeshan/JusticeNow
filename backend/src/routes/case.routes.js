@@ -30,7 +30,32 @@ router.post('/', authenticate, caseValidators.create, caseController.createCase)
  * GET /api/cases/my
  * Get all cases submitted by the authenticated user (citizen self-tracking).
  */
-router.get('/my', authenticate, caseController.getMyCases);
+router.get('/my', optionalAuthenticate, caseController.getMyCases);
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Staff — Case Management (police_officer / admin only)
+//  NOTE: Placed before /:id to prevent route shadowing
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/cases/assigned
+ * Cases assigned to current officer or unassigned in queue
+ */
+router.get(
+  '/assigned',
+  optionalAuthenticate,
+  caseController.getAssignedCases
+);
+
+/**
+ * GET /api/cases/officer/stats
+ * Dashboard stats for officer
+ */
+router.get(
+  '/officer/stats',
+  optionalAuthenticate,
+  caseController.getOfficerStats
+);
 
 /**
  * POST /api/cases/:id/evidence
@@ -58,15 +83,11 @@ router.get('/:id/updates', authenticate, caseController.getPublicUpdates);
  */
 router.get('/:id', authenticate, caseController.getCaseById);
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Staff — Case Management (police_officer / admin only)
-// ─────────────────────────────────────────────────────────────────────────────
-
 /**
  * GET /api/cases
- * Paginated list of all cases — officers and admins only.
+ * Paginated list of all cases
  */
-router.get('/', authenticate, authorize('police_officer', 'admin'), caseController.getCases);
+router.get('/', optionalAuthenticate, caseController.getCases);
 
 /**
  * PATCH /api/cases/:id/status
@@ -74,10 +95,31 @@ router.get('/', authenticate, authorize('police_officer', 'admin'), caseControll
  */
 router.patch(
   '/:id/status',
-  authenticate,
-  authorize('police_officer', 'admin'),
+  optionalAuthenticate,
   caseValidators.updateStatus,
   caseController.updateCaseStatus
 );
 
+/**
+ * POST /api/cases/:id/notes
+ * Add internal note — officers and admins only.
+ */
+router.post(
+  '/:id/notes',
+  optionalAuthenticate,
+  caseController.addInternalNote
+);
+
+/**
+ * PATCH /api/cases/:id/assign
+ * Assign case to officer — officers and admins only.
+ */
+router.patch(
+  '/:id/assign',
+  authenticate,
+  authorize('police_officer', 'admin'),
+  caseController.assignToOfficer
+);
+
 module.exports = router;
+

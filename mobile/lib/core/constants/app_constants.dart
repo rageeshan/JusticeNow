@@ -1,11 +1,16 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class AppConstants {
   AppConstants._();
 
   // API
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3000/api', // Android emulator → localhost
-  );
+  static String get baseUrl {
+    const envUrl = String.fromEnvironment('API_BASE_URL');
+    if (envUrl.isNotEmpty) return envUrl;
+    if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:3000/api';
+    return 'http://localhost:3000/api';
+  }
 
   // Secure storage keys
   static const String tokenKey = 'jn_auth_token';

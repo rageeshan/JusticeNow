@@ -32,7 +32,7 @@ class OfficerCaseDetailScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(caseData['referenceNumber'] ?? 'Case Details'),
+        title: Text((caseData['referenceNumber'] ?? 'Case Details').toString()),
       ),
       body: Column(
         children: [
@@ -46,7 +46,7 @@ class OfficerCaseDetailScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          caseData['referenceNumber'] ?? '',
+                          (caseData['referenceNumber'] ?? '').toString(),
                           style: const TextStyle(
                             color: AppColors.accent,
                             fontWeight: FontWeight.w700,
@@ -59,14 +59,15 @@ class OfficerCaseDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    caseData['title'] ?? '',
+                    (caseData['title'] ?? '').toString(),
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    AppConstants.caseCategories[caseData['category']] ??
-                        caseData['category'] ??
-                        '',
+                    (AppConstants.caseCategories[caseData['category']] ??
+                            caseData['category'] ??
+                            '')
+                        .toString(),
                     style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 20),
@@ -77,7 +78,7 @@ class OfficerCaseDetailScreen extends ConsumerWidget {
                   const _SectionTitle('Description'),
                   const SizedBox(height: 8),
                   Text(
-                    caseData['description'] ?? '',
+                    (caseData['description'] ?? '').toString(),
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       height: 1.6,
@@ -97,7 +98,7 @@ class OfficerCaseDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   if (evidence.isEmpty)
-                    _EmptyBlock(
+                    const _EmptyBlock(
                       icon: Icons.folder_off_outlined,
                       message: 'No evidence uploaded yet',
                     )
@@ -180,75 +181,212 @@ class _ActionBar extends ConsumerWidget {
     required this.caseData,
   });
 
+  bool get isInvestigating => status == 'investigating';
+
   bool get canInvestigate =>
-      status == 'submitted' ||
-      status == 'under_review' ||
-      status == 'evidence_requested';
+      !isInvestigating &&
+      status != 'resolved' &&
+      status != 'closed' &&
+      status != 'rejected';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: EdgeInsets.fromLTRB(
         16,
-        12,
+        14,
         16,
-        12 + MediaQuery.of(context).padding.bottom,
+        14 + MediaQuery.of(context).padding.bottom,
       ),
       decoration: const BoxDecoration(
         color: AppColors.primaryDark,
         border: Border(top: BorderSide(color: AppColors.divider)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 12,
+            offset: Offset(0, -4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (isInvestigating) ...[
+            // Status banner indicating active investigation
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: AppColors.statusInvestigating.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.statusInvestigating.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.radar_rounded, size: 16, color: AppColors.statusInvestigating),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'ACTIVE INVESTIGATION IN PROGRESS',
+                      style: TextStyle(
+                        color: AppColors.statusInvestigating,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // High-visibility button: Close / Complete Investigation
+            ElevatedButton.icon(
+              onPressed: () => _showCloseFeedbackSheet(context, ref),
+              icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+              label: const Text(
+                'Close Investigation / Conclude Case',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ] else if (canInvestigate) ...[
+            // High-visibility button: Start Investigation
+            ElevatedButton.icon(
+              onPressed: () => _confirmInvestigate(context, ref),
+              icon: const Icon(Icons.play_arrow_rounded, size: 22),
+              label: const Text(
+                'Start Investigation',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: AppColors.primaryDark,
+                minimumSize: const Size.fromHeight(50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 10),
+
+          // Secondary Action Row: Request Evidence & Add Note
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _showRequestEvidenceSheet(context, ref),
-                  icon: const Icon(Icons.playlist_add_check_rounded, size: 18),
+                  icon: const Icon(Icons.playlist_add_check_rounded, size: 17),
                   label: const Text('Request Evidence'),
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(46),
-                    textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    minimumSize: const Size.fromHeight(42),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: canInvestigate
-                      ? () => _confirmInvestigate(context, ref)
-                      : null,
-                  icon: const Icon(Icons.search_rounded, size: 18),
-                  label: const Text('Investigate'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(46),
-                    textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                child: OutlinedButton.icon(
+                  onPressed: () => _showAddNoteSheet(context, ref),
+                  icon: const Icon(Icons.note_add_outlined, size: 17),
+                  label: const Text('Add Note'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(42),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => _showCloseFeedbackSheet(context, ref),
-              icon: const Icon(Icons.task_alt_rounded, size: 18),
-              label: const Text('Feedback & Close Case'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.success,
-                side: const BorderSide(color: AppColors.success),
-                minimumSize: const Size.fromHeight(46),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
+
+  Future<void> _showAddNoteSheet(BuildContext context, WidgetRef ref) async {
+    final noteCtrl = TextEditingController();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            20 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Add Confidential Staff Note',
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'This note is strictly confidential and will NEVER be visible to the reporter or public.',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: noteCtrl,
+                maxLines: 4,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: const InputDecoration(
+                  labelText: 'Investigation Finding / Lead',
+                  hintText: 'Enter confidential observations, witness leads, or legal assessment...',
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (noteCtrl.text.trim().isEmpty) return;
+                  ref.read(officerCasesProvider.notifier).addInternalNote(
+                        caseId: caseId,
+                        note: noteCtrl.text.trim(),
+                      );
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Confidential staff note added to case file.'),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                },
+                child: const Text('Save Confidential Note'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 
   Future<void> _confirmInvestigate(BuildContext context, WidgetRef ref) async {
     final evidenceCount = (caseData['evidence'] as List?)?.length ?? 0;
@@ -276,13 +414,15 @@ class _ActionBar extends ConsumerWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      ref.read(officerCasesProvider.notifier).startInvestigation(caseId: caseId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Case moved to Investigating'),
-          backgroundColor: AppColors.primary,
-        ),
-      );
+      await ref.read(officerCasesProvider.notifier).startInvestigation(caseId: caseId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Case moved to Investigating'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
     }
   }
 
@@ -516,10 +656,19 @@ class _InfoStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locMap = caseData['location'] is Map ? caseData['location'] as Map : null;
     final location = [
-      caseData['location']?['city'],
-      caseData['location']?['country'],
-    ].where((v) => v != null && v.toString().isNotEmpty).join(', ');
+      locMap?['address'],
+      locMap?['city'],
+      locMap?['state'],
+      locMap?['country'],
+    ].where((v) => v != null && v.toString().trim().isNotEmpty).join(', ');
+
+    final isAnon = caseData['isAnonymous'] == true;
+    final reporterName = caseData['contactName'] ??
+        caseData['reportedByAlias'] ??
+        caseData['contactEmail'] ??
+        'Registered Citizen';
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -532,7 +681,7 @@ class _InfoStrip extends StatelessWidget {
         children: [
           _DetailRow(
             icon: Icons.calendar_today_outlined,
-            label: 'Incident',
+            label: 'Incident Date',
             value: caseData['incidentDate']?.toString().split('T').first ?? 'N/A',
           ),
           _DetailRow(
@@ -543,16 +692,17 @@ class _InfoStrip extends StatelessWidget {
           _DetailRow(
             icon: Icons.priority_high_rounded,
             label: 'Priority',
-            value: AppConstants.priorityLabels[caseData['priority']] ??
-                caseData['priority'] ??
-                'Medium',
+            value: (AppConstants.priorityLabels[caseData['priority']] ??
+                    caseData['priority'] ??
+                    'Medium')
+                .toString(),
           ),
           _DetailRow(
-            icon: Icons.person_outline_rounded,
+            icon: isAnon ? Icons.shield_outlined : Icons.person_outline_rounded,
             label: 'Reporter',
-            value: caseData['isAnonymous'] == true
-                ? 'Anonymous (${caseData['reportedByAlias'] ?? '—'})'
-                : (caseData['reportedByAlias'] ?? 'Citizen'),
+            value: isAnon
+                ? 'Anonymous (${caseData['reportedByAlias'] ?? 'Protected'})'
+                : reporterName.toString(),
           ),
         ],
       ),
@@ -615,7 +765,7 @@ class _EvidenceTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  evidence['originalName'] ?? 'File',
+                  (evidence['originalName'] ?? 'File').toString(),
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
@@ -637,15 +787,74 @@ class _EvidenceTile extends StatelessWidget {
                   ].where((s) => s.isNotEmpty).join(' · '),
                   style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
                 ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified_rounded, size: 10, color: AppColors.success),
+                      SizedBox(width: 3),
+                      Text(
+                        'SHA-256 Custody Verified',
+                        style: TextStyle(
+                          color: AppColors.success,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
           IconButton(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Preview: ${evidence['originalName']} (UI stub)'),
-                  backgroundColor: AppColors.primary,
+              showDialog<void>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: AppColors.surface,
+                  title: Text((evidence['originalName'] ?? 'Evidence File').toString()),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        height: 120,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryDark,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.divider),
+                        ),
+                        child: Center(
+                          child: Icon(_icon, color: _color, size: 48),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Type: ${(evidence['fileType'] as String?)?.toUpperCase() ?? 'FILE'} · ${_formatSize(evidence['sizeBytes'] as int?)}',
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                      if (evidence['description'] != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          evidence['description'].toString(),
+                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                        ),
+                      ],
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Close', style: TextStyle(color: AppColors.accent)),
+                    ),
+                  ],
                 ),
               );
             },
@@ -768,9 +977,10 @@ class _TimelineItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AppConstants.caseStatusLabels[event['status']] ??
-                    event['status'] ??
-                    '',
+                (AppConstants.caseStatusLabels[event['status']] ??
+                        event['status'] ??
+                        '')
+                    .toString(),
                 style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.w600,

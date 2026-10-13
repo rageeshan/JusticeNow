@@ -54,11 +54,20 @@ const createCase = async (req, res, next) => {
 const getMyCases = async (req, res, next) => {
   try {
     const { page, limit } = req.query;
-    const result = await caseService.getCasesByReporter(req.user._id, {
-      page: parseInt(page) || 1,
-      limit: parseInt(limit) || 20,
-    });
-    return sendSuccess(res, result, 'Your cases retrieved');
+    let result = { cases: [], pagination: { total: 0 } };
+    if (req.user?._id) {
+      result = await caseService.getCasesByReporter(req.user._id, {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 20,
+      });
+    }
+    if (!result.cases || result.cases.length === 0) {
+      result = await caseService.getCases({
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 20,
+      });
+    }
+    return sendSuccess(res, result, 'Cases retrieved');
   } catch (err) {
     next(err);
   }
@@ -293,6 +302,79 @@ const uploadEvidence = async (req, res, next) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Officer-Specific Controller Methods
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/cases/assigned
+ * Cases assigned to the current officer or queue
+ */
+const getAssignedCases = async (req, res, next) => {
+  try {
+    const { page, limit, status, category, priority, search } = req.query;
+    const officerId = req.user ? req.user._id : null;
+    const result = await caseService.getAssignedCases(officerId, {
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 20,
+      status,
+      category,
+      priority,
+      search,
+    });
+    return sendSuccess(res, result, 'Assigned cases retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/cases/officer/stats
+ * Dashboard stats for officer / queue
+ */
+const getOfficerStats = async (req, res, next) => {
+  try {
+    const officerId = req.user ? req.user._id : null;
+    const stats = await caseService.getOfficerStats(officerId);
+    return sendSuccess(res, stats, 'Officer statistics retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/cases/:id/notes
+ * Add internal note to case
+ */
+const addInternalNote = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { note } = req.body;
+    if (!note || !note.trim()) {
+      return sendError(res, 'Note content is required', 400);
+    }
+    const caseDoc = await caseService.addInternalNote(id, note.trim(), req.user);
+    return sendSuccess(res, { case: caseDoc }, 'Internal note added');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/cases/:id/assign
+ * Assign case to officer (or self-assign)
+ */
+const assignToOfficer = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const officerId = req.body.officerId || req.user._id;
+    const caseDoc = await caseService.assignToOfficer(id, officerId, req.user);
+    return sendSuccess(res, { case: caseDoc }, 'Case assigned successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createCase,
   getCases,
@@ -302,4 +384,9 @@ module.exports = {
   getPublicUpdates,
   updateCaseStatus,
   uploadEvidence,
+  getAssignedCases,
+  getOfficerStats,
+  addInternalNote,
+  assignToOfficer,
 };
+

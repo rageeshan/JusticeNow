@@ -1,23 +1,55 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/case_model.dart';
-import '../data/models/mock_cases.dart';
+import 'officer_cases_provider.dart' show caseRepositoryProvider;
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Citizen Cases Provider — serves local mock data with a simulated delay
+//  Citizen Cases Provider — live MongoDB database connection
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Returns all mock cases (simulates a network load)
+/// Returns all cases from MongoDB API
 final citizenCasesProvider = FutureProvider<List<CaseModel>>((ref) async {
-  await Future.delayed(const Duration(milliseconds: 900));
-  return kMockCases;
+  final repo = ref.watch(caseRepositoryProvider);
+  try {
+    final res = await repo.getMyCases(page: 1, limit: 50);
+    final rawList = res['cases'] as List?;
+    if (rawList != null && rawList.isNotEmpty) {
+      return rawList
+          .map((e) => CaseModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    }
+  } catch (_) {}
+
+  try {
+    final res = await repo.getCases(page: 1, limit: 50);
+    final rawList = res['cases'] as List?;
+    if (rawList != null && rawList.isNotEmpty) {
+      return rawList
+          .map((e) => CaseModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    }
+  } catch (_) {}
+
+  return [];
 });
 
-/// Returns a single case by ID
+/// Returns a single case by ID or Reference Number from MongoDB
 final caseDetailProvider =
     FutureProvider.family<CaseModel?, String>((ref, id) async {
-  await Future.delayed(const Duration(milliseconds: 600));
+  final repo = ref.watch(caseRepositoryProvider);
   try {
-    return kMockCases.firstWhere((c) => c.id == id);
+    if (id.startsWith('JN-')) {
+      final res = await repo.trackByReferenceNumber(id);
+      return CaseModel.fromJson(res);
+    }
+    final res = await repo.getCaseById(id);
+    return CaseModel.fromJson(res);
+  } catch (_) {}
+
+  try {
+    final allCases = await ref.watch(citizenCasesProvider.future);
+    return allCases.firstWhere(
+      (c) => c.id.toLowerCase() == id.toLowerCase(),
+    );
   } catch (_) {
     return null;
   }

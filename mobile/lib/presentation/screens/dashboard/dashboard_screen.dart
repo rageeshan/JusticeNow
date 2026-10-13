@@ -58,9 +58,9 @@ class DashboardScreen extends ConsumerWidget {
                 )
               else
                 ...(data['byStatus'] as List).map((item) => _StatusBar(
-                      status: item['_id'] ?? '',
-                      count: item['count'] ?? 0,
-                      total: data['totalCases'] ?? 1,
+                      status: item['_id']?.toString() ?? '',
+                      count: (item['count'] as num?)?.toInt() ?? 0,
+                      total: (data['totalCases'] as num?)?.toInt() ?? 1,
                     )),
             ],
           ),

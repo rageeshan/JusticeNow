@@ -10,6 +10,7 @@ import '../../presentation/screens/cases/case_detail_screen.dart';
 import '../../presentation/screens/legal_aid/legal_aid_screen.dart';
 import '../../presentation/screens/dashboard/dashboard_screen.dart';
 import '../../presentation/screens/officer/officer_home_screen.dart';
+import '../../presentation/screens/officer/officer_shell_screen.dart';
 import '../../presentation/screens/officer/officer_case_detail_screen.dart';
 
 /// Named route constants
@@ -30,7 +31,7 @@ class AppRoutes {
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: AppRoutes.splash,
+    initialLocation: AppRoutes.officerHome,
     debugLogDiagnostics: true,
     routes: [
       GoRoute(
@@ -73,7 +74,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.officerHome,
-        builder: (context, state) => const OfficerHomeScreen(),
+        builder: (context, state) => const OfficerShellScreen(),
       ),
       GoRoute(
         path: AppRoutes.officerCaseDetail,

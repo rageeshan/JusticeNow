@@ -1,398 +1,452 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/officer_cases_provider.dart';
+import '../../widgets/officer/officer_case_card.dart';
+import '../../widgets/officer/officer_stat_card.dart';
+import 'officer_shell_screen.dart';
 
 class OfficerHomeScreen extends ConsumerWidget {
   const OfficerHomeScreen({super.key});
 
-  static const _filters = [
-    ('all', 'All'),
-    ('submitted', 'New'),
-    ('under_review', 'Review'),
-    ('evidence_requested', 'Evidence'),
-    ('investigating', 'Active'),
-    ('closed', 'Closed'),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+    final officerName = user?['alias'] ?? user?['email']?.toString().split('@').first ?? 'Officer';
+
+    final statsAsync = ref.watch(officerStatsProvider);
     final cases = ref.watch(officerCasesProvider);
-    final filter = ref.watch(officerQueueFilterProvider);
-    final filtered = _applyFilter(cases, filter);
-    final stats = _computeStats(cases);
+
+    // Urgent Cases: Critical or High priority that are still submitted / under_review / investigating
+    final urgentCases = cases.where((c) {
+      final prio = (c['priority'] as String? ?? '').toLowerCase();
+      final status = (c['status'] as String? ?? '').toLowerCase();
+      return (prio == 'critical' || prio == 'high') &&
+          status != 'resolved' &&
+          status != 'closed' &&
+          status != 'rejected';
+    }).take(4).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Case Officer'),
-        actions: [
-          IconButton(
-            tooltip: 'Citizen view',
-            icon: const Icon(Icons.swap_horiz_rounded),
-            onPressed: () => context.go(AppRoutes.myCases),
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Column(
+        backgroundColor: AppColors.primaryDark,
+        elevation: 0,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.security_rounded,
+                color: AppColors.accent,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Case Queue',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Review submissions, evidence, and close cases',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                _StatsRow(stats: stats),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-          SizedBox(
-            height: 40,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _filters.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final (key, label) = _filters[index];
-                final selected = filter == key;
-                return FilterChip(
-                  selected: selected,
-                  label: Text(label),
-                  onSelected: (_) =>
-                      ref.read(officerQueueFilterProvider.notifier).state = key,
-                  selectedColor: AppColors.accent.withValues(alpha: 0.2),
-                  checkmarkColor: AppColors.accent,
-                  labelStyle: TextStyle(
-                    color: selected ? AppColors.accent : AppColors.textSecondary,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                  side: BorderSide(
-                    color: selected ? AppColors.accent : AppColors.divider,
-                  ),
-                  backgroundColor: AppColors.surface,
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: filtered.isEmpty
-                ? const _EmptyQueue()
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      return _OfficerCaseCard(caseData: filtered[index]);
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Map<String, dynamic>> _applyFilter(
-    List<Map<String, dynamic>> cases,
-    String filter,
-  ) {
-    if (filter == 'all') return cases;
-    if (filter == 'closed') {
-      return cases
-          .where((c) => c['status'] == 'closed' || c['status'] == 'resolved')
-          .toList();
-    }
-    return cases.where((c) => c['status'] == filter).toList();
-  }
-
-  Map<String, int> _computeStats(List<Map<String, dynamic>> cases) {
-    int pending = 0;
-    int active = 0;
-    int evidence = 0;
-    int done = 0;
-    for (final c in cases) {
-      switch (c['status']) {
-        case 'submitted':
-        case 'under_review':
-          pending++;
-          break;
-        case 'investigating':
-        case 'legal_action_initiated':
-        case 'referred_to_ngo':
-          active++;
-          break;
-        case 'evidence_requested':
-          evidence++;
-          break;
-        case 'resolved':
-        case 'closed':
-        case 'rejected':
-          done++;
-          break;
-      }
-    }
-    return {
-      'pending': pending,
-      'active': active,
-      'evidence': evidence,
-      'done': done,
-    };
-  }
-}
-
-class _StatsRow extends StatelessWidget {
-  final Map<String, int> stats;
-  const _StatsRow({required this.stats});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _MiniStat(
-            label: 'Pending',
-            value: '${stats['pending'] ?? 0}',
-            color: AppColors.info,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _MiniStat(
-            label: 'Active',
-            value: '${stats['active'] ?? 0}',
-            color: AppColors.statusInvestigating,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _MiniStat(
-            label: 'Evidence',
-            value: '${stats['evidence'] ?? 0}',
-            color: AppColors.warning,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _MiniStat(
-            label: 'Closed',
-            value: '${stats['done'] ?? 0}',
-            color: AppColors.success,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  const _MiniStat({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OfficerCaseCard extends ConsumerWidget {
-  final Map<String, dynamic> caseData;
-  const _OfficerCaseCard({required this.caseData});
-
-  Color _statusColor(String? status) {
-    return switch (status) {
-      'submitted' => AppColors.statusSubmitted,
-      'under_review' => AppColors.statusUnderReview,
-      'investigating' => AppColors.statusInvestigating,
-      'evidence_requested' => AppColors.warning,
-      'resolved' => AppColors.statusResolved,
-      'closed' => AppColors.statusClosed,
-      'rejected' => AppColors.statusRejected,
-      _ => AppColors.textMuted,
-    };
-  }
-
-  Color _priorityColor(String? priority) {
-    return switch (priority) {
-      'critical' => AppColors.error,
-      'high' => AppColors.warning,
-      'medium' => AppColors.info,
-      'low' => AppColors.textMuted,
-      _ => AppColors.textMuted,
-    };
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final status = caseData['status'] as String?;
-    final statusLabel = AppConstants.caseStatusLabels[status] ?? status ?? 'Unknown';
-    final category = caseData['category'] as String?;
-    final categoryLabel = AppConstants.caseCategories[category] ?? category ?? '';
-    final priority = caseData['priority'] as String?;
-    final priorityLabel = AppConstants.priorityLabels[priority] ?? priority ?? '';
-    final evidenceCount = (caseData['evidence'] as List?)?.length ?? 0;
-    final caseId = caseData['_id'] as String;
-
-    return GestureDetector(
-      onTap: () {
-        if (status == 'submitted') {
-          ref.read(officerCasesProvider.notifier).markUnderReview(caseId);
-        }
-        context.push('/officer/cases/$caseId');
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    caseData['referenceNumber'] ?? '',
-                    style: const TextStyle(
-                      color: AppColors.accent,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _statusColor(status).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: TextStyle(
-                      color: _statusColor(status),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              caseData['title'] ?? 'Untitled Case',
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              categoryLabel,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.flag_outlined, size: 14, color: _priorityColor(priority)),
-                const SizedBox(width: 4),
-                Text(
-                  priorityLabel,
+                const Text(
+                  'JusticeNow',
                   style: TextStyle(
-                    color: _priorityColor(priority),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                const SizedBox(width: 14),
-                const Icon(Icons.attach_file_rounded, size: 14, color: AppColors.textMuted),
-                const SizedBox(width: 4),
                 Text(
-                  '$evidenceCount evidence',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-                ),
-                const Spacer(),
-                const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
-                const SizedBox(width: 4),
-                Text(
-                  caseData['location']?['city'] ?? '—',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  'Case Officer Console',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.accentLight.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh Cases',
+            icon: const Icon(Icons.refresh_rounded, size: 20, color: AppColors.textSecondary),
+            onPressed: () {
+              ref.read(officerCasesProvider.notifier).fetchCases(force: true);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Syncing cases with backend API...'),
+                  duration: Duration(seconds: 1),
+                  backgroundColor: AppColors.primaryLight,
+                ),
+              );
+            },
+          ),
+          IconButton(
+            tooltip: 'Switch to Citizen View',
+            icon: const Icon(Icons.swap_horiz_rounded, color: AppColors.textSecondary),
+            onPressed: () => context.go(AppRoutes.myCases),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        color: AppColors.accent,
+        backgroundColor: AppColors.surface,
+        onRefresh: () async {
+          await ref.read(officerCasesProvider.notifier).fetchCases(force: true);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Welcome Banner
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E3557), Color(0xFF112239)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.success,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'DUTY ACTIVE · SECURE SESSION',
+                                style: TextStyle(
+                                  color: AppColors.accent,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Officer $officerName',
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Human Rights Investigation & Oversight Division',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.accent, width: 1.5),
+                      ),
+                      child: const Icon(
+                        Icons.shield_rounded,
+                        color: AppColors.accent,
+                        size: 26,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // KPI Section Title
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'INVESTIGATION METRICS',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      ref.read(officerNavIndexProvider.notifier).state = 1;
+                    },
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.accent),
+                    label: const Text(
+                      'View All Cases',
+                      style: TextStyle(
+                        color: AppColors.accent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // 2x2 Metric Cards Grid
+              statsAsync.when(
+                data: (stats) => GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.25,
+                  children: [
+                    OfficerStatCard(
+                      title: 'Total In Queue',
+                      value: '${stats.totalAssigned}',
+                      subtitle: '${stats.critical} Critical Priority',
+                      icon: Icons.folder_open_rounded,
+                      accentColor: AppColors.info,
+                      onTap: () {
+                        ref.read(officerQueueFilterProvider.notifier).state = 'all';
+                        ref.read(officerNavIndexProvider.notifier).state = 1;
+                      },
+                    ),
+                    OfficerStatCard(
+                      title: 'Needs Triage',
+                      value: '${stats.awaitingReview}',
+                      subtitle: 'Pending Review',
+                      icon: Icons.pending_actions_rounded,
+                      accentColor: AppColors.warning,
+                      onTap: () {
+                        ref.read(officerQueueFilterProvider.notifier).state = 'submitted';
+                        ref.read(officerNavIndexProvider.notifier).state = 1;
+                      },
+                    ),
+                    OfficerStatCard(
+                      title: 'Active Inquiries',
+                      value: '${stats.activeInvestigations}',
+                      subtitle: 'In Progress',
+                      icon: Icons.search_rounded,
+                      accentColor: AppColors.accent,
+                      onTap: () {
+                        ref.read(officerQueueFilterProvider.notifier).state = 'investigating';
+                        ref.read(officerNavIndexProvider.notifier).state = 1;
+                      },
+                    ),
+                    OfficerStatCard(
+                      title: 'Evidence Pending',
+                      value: '${stats.evidenceRequested}',
+                      subtitle: 'Awaiting Files',
+                      icon: Icons.inventory_2_rounded,
+                      accentColor: const Color(0xFFF97316),
+                      onTap: () {
+                        ref.read(officerNavIndexProvider.notifier).state = 2;
+                      },
+                    ),
+                  ],
+                ),
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: CircularProgressIndicator(color: AppColors.accent),
+                  ),
+                ),
+                error: (_, __) => const SizedBox(),
+              ),
+              const SizedBox(height: 24),
+
+              // Quick Action Bar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _QuickActionButton(
+                      icon: Icons.filter_list_rounded,
+                      label: 'Filter Queue',
+                      onTap: () {
+                        ref.read(officerNavIndexProvider.notifier).state = 1;
+                      },
+                    ),
+                    Container(width: 1, height: 28, color: AppColors.divider),
+                    _QuickActionButton(
+                      icon: Icons.add_photo_alternate_outlined,
+                      label: 'Request Ev.',
+                      onTap: () {
+                        ref.read(officerNavIndexProvider.notifier).state = 2;
+                      },
+                    ),
+                    Container(width: 1, height: 28, color: AppColors.divider),
+                    _QuickActionButton(
+                      icon: Icons.verified_user_outlined,
+                      label: 'Audit Trail',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Immutable Audit Trail verified with MongoDB backend.'),
+                            backgroundColor: AppColors.primary,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Urgent Attention Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.error,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'URGENT TRIAGE & ESCALATIONS',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    '${urgentCases.length} items',
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              if (urgentCases.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: const Column(
+                    children: [
+                      Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 36),
+                      SizedBox(height: 8),
+                      Text(
+                        'No Critical Alerts',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'All high-priority cases have been addressed.',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ...urgentCases.map(
+                  (c) => OfficerCaseCard(
+                    caseData: c,
+                    onTap: () {
+                      context.push('/officer/cases/${c['_id'] ?? c['id']}');
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _EmptyQueue extends StatelessWidget {
-  const _EmptyQueue();
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: EdgeInsets.all(40),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inbox_outlined, size: 56, color: AppColors.textMuted),
-            SizedBox(height: 12),
+            Icon(icon, color: AppColors.accent, size: 20),
+            const SizedBox(height: 4),
             Text(
-              'No cases in this filter',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+              label,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

@@ -1,7 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
-//  JusticeNow — Citizen Case Model
-//  All data structures for the citizen-facing case experience
-// ─────────────────────────────────────────────────────────────────────────────
+import '../../core/constants/app_constants.dart';
 
 enum CaseStatus {
   submitted,
@@ -93,4 +90,95 @@ class CaseModel {
     this.expectedUpdateBy,
     this.hasEvidence = false,
   });
+
+  factory CaseModel.fromJson(Map<String, dynamic> json) {
+    final statusStr = json['status']?.toString() ?? 'submitted';
+    final status = switch (statusStr) {
+      'submitted' => CaseStatus.submitted,
+      'under_review' => CaseStatus.underReview,
+      'investigating' ||
+      'evidence_requested' ||
+      'awaiting_lawyer_selection' ||
+      'legal_action_initiated' ||
+      'referred_to_ngo' =>
+        CaseStatus.investigating,
+      'resolved' => CaseStatus.resolved,
+      'closed' || 'rejected' => CaseStatus.closed,
+      _ => CaseStatus.submitted,
+    };
+
+    final categoryStr = json['category']?.toString() ?? 'other';
+    final categoryLabel = AppConstants.caseCategories[categoryStr] ??
+        categoryStr.replaceAll('_', ' ').toUpperCase();
+
+    String locStr = 'Unknown Location';
+    if (json['location'] is Map) {
+      final loc = json['location'] as Map;
+      final parts = [loc['address'], loc['city'], loc['state'], loc['country']]
+          .where((e) => e != null && e.toString().trim().isNotEmpty)
+          .map((e) => e.toString().trim())
+          .toList();
+      if (parts.isNotEmpty) {
+        locStr = parts.join(', ');
+      }
+    } else if (json['location'] is String && (json['location'] as String).trim().isNotEmpty) {
+      locStr = json['location'] as String;
+    }
+
+    final rawTimeline = json['timeline'] as List? ?? [];
+    final timelineEvents = <TimelineEvent>[];
+    for (int i = 0; i < rawTimeline.length; i++) {
+      final t = rawTimeline[i];
+      if (t is Map) {
+        final tStatus = t['status']?.toString() ?? 'Update';
+        timelineEvents.add(TimelineEvent(
+          id: t['_id']?.toString() ?? 'ev-$i',
+          date: DateTime.tryParse(t['createdAt']?.toString() ?? '') ?? DateTime.now(),
+          title: tStatus.replaceAll('_', ' ').toUpperCase(),
+          description: t['note']?.toString() ?? '',
+          type: switch (tStatus) {
+            'submitted' => TimelineEventType.submitted,
+            'under_review' => TimelineEventType.review,
+            'resolved' => TimelineEventType.resolved,
+            _ => TimelineEventType.update,
+          },
+          isLatest: i == rawTimeline.length - 1,
+        ));
+      }
+    }
+
+    final rawUpdates = (json['publicUpdates'] as List?) ?? [];
+    final remarksList = <InvestigatorRemark>[];
+    for (final u in rawUpdates) {
+      if (u is Map) {
+        remarksList.add(InvestigatorRemark(
+          date: DateTime.tryParse(u['createdAt']?.toString() ?? '') ?? DateTime.now(),
+          officerAlias: u['officerAlias']?.toString() ?? 'Case Officer',
+          message: u['message']?.toString() ?? '',
+        ));
+      }
+    }
+
+    final rawEvidence = json['evidence'] as List?;
+    final hasEv = rawEvidence != null && rawEvidence.isNotEmpty;
+
+    return CaseModel(
+      id: json['referenceNumber']?.toString() ?? json['_id']?.toString() ?? '',
+      submittedAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.tryParse(json['submittedAt']?.toString() ?? '') ??
+          DateTime.now(),
+      category: categoryStr,
+      categoryLabel: categoryLabel,
+      status: status,
+      title: json['title']?.toString() ?? 'Untitled Report',
+      location: locStr,
+      incidentDate: DateTime.tryParse(json['incidentDate']?.toString() ?? '') ?? DateTime.now(),
+      isAnonymous: json['isAnonymous'] == true,
+      summary: json['description']?.toString() ?? '',
+      timeline: timelineEvents,
+      remarks: remarksList,
+      nextStep: json['adminFeedback']?.toString(),
+      hasEvidence: hasEv,
+    );
+  }
 }

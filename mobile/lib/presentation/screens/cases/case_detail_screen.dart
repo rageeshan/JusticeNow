@@ -7,7 +7,6 @@ import '../../../providers/citizen_cases_provider.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/case_timeline_widget.dart';
 import '../../widgets/investigator_remark_card.dart';
-import '../../widgets/demo_data_banner.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Case Detail Screen — Full case view with visual timeline
@@ -45,10 +44,6 @@ class CaseDetailScreen extends ConsumerWidget {
             },
           ),
         ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: DemoDataBanner(),
-        ),
       ),
       body: caseAsync.when(
         loading: () => const Center(

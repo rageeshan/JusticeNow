@@ -6,7 +6,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/models/case_model.dart';
 import '../../../providers/citizen_cases_provider.dart';
 import '../../widgets/status_badge.dart';
-import '../../widgets/demo_data_banner.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  My Cases Screen — Citizen case dashboard
@@ -63,10 +62,6 @@ class _MyCasesScreenState extends ConsumerState<MyCasesScreen> {
             },
           ),
         ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: DemoDataBanner(),
-        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(AppRoutes.reportCase),

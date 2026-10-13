@@ -86,7 +86,7 @@ const caseValidators = {
    * PATCH /api/cases/:id/status — Update case status (officer/admin)
    */
   updateStatus: [
-    param('id').isMongoId().withMessage('Invalid case ID format'),
+    param('id').notEmpty().withMessage('Case ID or Reference Number is required'),
 
     body('status')
       .notEmpty().withMessage('Status is required')
@@ -97,6 +97,8 @@ const caseValidators = {
         'evidence_requested',
         'referred_to_ngo',
         'legal_action_initiated',
+        'awaiting_lawyer_selection',
+        'waiting_for_lawyer_approval',
         'resolved',
         'closed',
         'rejected',

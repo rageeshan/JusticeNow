@@ -55,7 +55,7 @@ const registerCitizen = async ({ email, password }) => {
  * Login citizen with email/password
  */
 const loginCitizen = async ({ email, password }) => {
-  const user = await User.findOne({ email, role: { $in: ['citizen'] } });
+  const user = await User.findOne({ email });
   if (!user || !(await user.comparePassword(password))) {
     const err = new Error('Invalid email or password');
     err.statusCode = 401;

@@ -110,10 +110,6 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
           },
         ),
         title: const Text('Report an Incident'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: const DemoDataBanner(),
-        ),
       ),
       body: Column(
         children: [
