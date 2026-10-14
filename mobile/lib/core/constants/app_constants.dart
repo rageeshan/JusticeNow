@@ -1,15 +1,33 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io';
 
 class AppConstants {
   AppConstants._();
 
   // API
-  static String get baseUrl {
-    const envUrl = String.fromEnvironment('API_BASE_URL');
-    if (envUrl.isNotEmpty) return envUrl;
-    if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:3000/api';
-    return 'http://localhost:3000/api';
+// API
+  static final String baseUrl = _getBaseUrl();
+  static String get apiBaseUrl => baseUrl;
+
+  static String _getBaseUrl() {
+    const configuredUrl = String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: '',
+    );
+
+    if (configuredUrl.isNotEmpty) return configuredUrl;
+
+    return Platform.isAndroid
+        ? 'http://10.0.2.2:3000/api'
+        : 'http://localhost:3000/api';
+  }
+
+  static String get serverOrigin => baseUrl.replaceAll('/api', '');
+
+  static String resolveImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return '$serverOrigin$cleanPath';
   }
 
   // Secure storage keys
@@ -24,6 +42,12 @@ class AppConstants {
     'evidence_requested': 'Evidence Requested',
     'referred_to_ngo': 'Referred to NGO',
     'legal_action_initiated': 'Legal Action Initiated',
+    'awaiting_lawyer_selection': 'Approved - Select Lawyer',
+    'waiting_for_lawyer_approval': 'Waiting for Lawyer Approval',
+    'approved_scheduled': 'Approved – Scheduled',
+    'in_progress': 'In Progress',
+    'completed': 'Completed',
+    'lawyer_declined': 'Lawyer Declined',
     'resolved': 'Resolved',
     'closed': 'Closed',
     'rejected': 'Rejected',

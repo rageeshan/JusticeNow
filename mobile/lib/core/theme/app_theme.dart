@@ -40,6 +40,7 @@ class AppColors {
   static const statusRejected = Color(0xFFE53E3E);
 
   static const divider = Color(0xFF243852);
+  static const border = Color(0xFF243852);
   static const shadow = Color(0x40000000);
 }
 
@@ -113,7 +114,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.accent,
           foregroundColor: AppColors.primaryDark,
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(64, 48),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
         ),
@@ -121,7 +122,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.accent,
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(64, 48),
           side: const BorderSide(color: AppColors.accent),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),

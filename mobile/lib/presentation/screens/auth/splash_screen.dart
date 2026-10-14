@@ -13,12 +13,7 @@ class SplashScreen extends ConsumerWidget {
     // Listen to auth state changes and navigate accordingly
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.status == AuthStatus.authenticated) {
-        final role = next.user?['role'];
-        if (role == 'police_officer' || role == 'admin') {
-          context.go(AppRoutes.officerHome);
-        } else {
-          context.go(AppRoutes.myCases);
-        }
+        context.go(AppRoutes.home);
       } else if (next.status == AuthStatus.unauthenticated) {
         context.go(AppRoutes.onboarding);
       }

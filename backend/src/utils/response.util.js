@@ -14,9 +14,10 @@ const sendCreated = (res, data = {}, message = 'Resource created successfully') 
   return sendSuccess(res, data, message, 201);
 };
 
-const sendError = (res, message = 'An error occurred', statusCode = 500, errors = null) => {
+const sendError = (res, message = 'An error occurred', statusCode = 500, errors = null, data = null) => {
   const body = { success: false, message };
   if (errors) body.errors = errors;
+  if (data) body.data = data;
   return res.status(statusCode).json(body);
 };
 

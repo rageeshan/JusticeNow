@@ -1,14 +1,10 @@
-const mongoose = require('mongoose');
 const Case = require('../models/Case.model');
 const AuditLog = require('../models/AuditLog.model');
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+const Notification = require('../models/Notification.model');
 
 /**
  * Generate a unique human-readable reference number
- * Format: JN-YYYY-XXXXX  e.g. JN-2026-00042
+ * Format: JN-YYYY-XXXXX
  */
 const generateReferenceNumber = async () => {
   const year = new Date().getFullYear();
@@ -17,68 +13,95 @@ const generateReferenceNumber = async () => {
   return `JN-${year}-${padded}`;
 };
 
-// Citizen-safe projection — strips internal officer notes
-const CITIZEN_PROJECTION = '-internalNotes';
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Create
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Helper to compute date range filter
+ */
+const getDateFilterQuery = (filter) => {
+  const now = new Date();
+  if (filter === 'today') {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    return { $gte: start, $lte: end };
+  }
+  if (filter === 'this_week') {
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    const start = new Date(now.getFullYear(), now.getMonth(), diff, 0, 0, 0, 0);
+    return { $gte: start, $lte: now };
+  }
+  if (filter === 'last_week') {
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const start = new Date(now.getFullYear(), now.getMonth(), diff - 7, 0, 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth(), diff - 1, 23, 59, 59, 999);
+    return { $gte: start, $lte: end };
+  }
+  if (filter === 'this_month') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    return { $gte: start, $lte: now };
+  }
+  if (filter === 'last_month') {
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    return { $gte: start, $lte: end };
+  }
+  return null;
+};
 
 /**
  * Create a new case report
- * @param {Object} data   - Request body (title, description, category, etc.)
- * @param {Object} user   - Authenticated user (req.user)
  */
-const createCase = async (data, user) => {
+const createCase = async (data, reportedBy) => {
   const referenceNumber = await generateReferenceNumber();
-  const isAnonymous = user.role === 'anonymous';
 
   const newCase = await Case.create({
-    title: data.title,
-    description: data.description,
-    category: data.category,
-    incidentDate: data.incidentDate,
-    location: data.location || {},
+    ...data,
     referenceNumber,
-    reportedBy: user._id,
-    isAnonymous,
-    // Only persist contact details for non-anonymous reporters
-    contactName: !isAnonymous ? (data.contactName || null) : null,
-    contactEmail: !isAnonymous ? (data.contactEmail || null) : null,
+    reportedBy: reportedBy._id,
+    isAnonymous: reportedBy.role === 'anonymous',
     timeline: [
       {
         status: 'submitted',
         note: 'Case submitted by reporter',
-        updatedBy: user._id,
+        updatedBy: reportedBy._id,
       },
     ],
   });
 
   await AuditLog.create({
     action: 'case.created',
-    performedBy: user._id,
+    performedBy: reportedBy._id,
     targetResource: 'Case',
     targetId: newCase._id,
-    metadata: { referenceNumber, category: data.category, isAnonymous },
+    metadata: { referenceNumber, category: data.category },
   });
 
   return newCase;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Read — Officer / Admin
-// ─────────────────────────────────────────────────────────────────────────────
-
 /**
- * Get paginated list of ALL cases (officers/admins only)
+ * Get paginated list of cases (for officers/admins)
  */
-const getCases = async ({ page = 1, limit = 20, status, category, priority, search } = {}) => {
+const getCases = async ({ page = 1, limit = 20, status, category, priority, search, dateFilter } = {}) => {
   const query = { isDeleted: false };
 
-  if (status) query.status = status;
-  if (category) query.category = category;
-  if (priority) query.priority = priority;
-  if (search) query.$text = { $search: search };
+  if (status && status !== 'All') query.status = status;
+  if (category && category !== 'All') query.category = category;
+  if (priority && priority !== 'All') query.priority = priority;
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+      { referenceNumber: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  if (dateFilter && dateFilter !== 'all') {
+    const dateRange = getDateFilterQuery(dateFilter);
+    if (dateRange) {
+      query.createdAt = dateRange;
+    }
+  }
 
   const skip = (page - 1) * limit;
   const [cases, total] = await Promise.all([
@@ -86,262 +109,113 @@ const getCases = async ({ page = 1, limit = 20, status, category, priority, sear
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
+      .populate('reportedBy', 'alias email role profile')
       .populate('assignedOfficer', 'profile.fullName email')
-      .populate('assignedOrganization', 'name type'),
+      .populate('assignedOrganization', 'name type')
+      .populate('evidence'),
     Case.countDocuments(query),
   ]);
 
   return {
     cases,
-    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+    },
   };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Read — Citizen
-// ─────────────────────────────────────────────────────────────────────────────
-
 /**
- * Get cases reported by a specific user (citizen self-tracking)
- * Internal notes are NEVER sent to the citizen.
- */
-const getCasesByReporter = async (userId, { page = 1, limit = 20 } = {}) => {
-  const query = { reportedBy: userId, isDeleted: false };
-  const skip = (page - 1) * limit;
-  const [cases, total] = await Promise.all([
-    Case.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .select(CITIZEN_PROJECTION),
-    Case.countDocuments(query),
-  ]);
-  return { cases, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
-};
-
-/**
- * Get a single case by MongoDB ObjectId
+ * Get a single case by ID
  */
 const getCaseById = async (id) => {
   return Case.findOne({ _id: id, isDeleted: false })
-    .populate('reportedBy', 'alias email role')
+    .populate('reportedBy', 'alias email role profile')
     .populate('assignedOfficer', 'profile.fullName email')
     .populate('assignedOrganization', 'name type contact')
     .populate('evidence');
 };
 
 /**
- * Get a single case by its human-readable reference number
- * e.g. JN-2024-0042 — used by citizens tracking from the mobile app.
- * Internal notes are stripped; only publicUpdates are returned.
+ * Update case status with timeline event and notifications
  */
-const getCaseByReferenceNumber = async (refNum) => {
-  return Case.findOne({ referenceNumber: refNum.toUpperCase(), isDeleted: false })
-    .select(CITIZEN_PROJECTION)
-    .populate('evidence', 'originalName fileType sizeBytes createdAt');
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Update — Officer / Admin
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Update case status with a timeline entry (officer/admin only)
- */
-const updateCaseStatus = async (id, { status, note }, updatedBy) => {
-  const query = mongoose.Types.ObjectId.isValid(id)
-    ? { _id: id, isDeleted: false }
-    : { referenceNumber: id, isDeleted: false };
-  const caseDoc = await Case.findOne(query);
+const updateCaseStatus = async (id, { status, note, reason }, updatedBy) => {
+  const caseDoc = await Case.findOne({ _id: id, isDeleted: false });
   if (!caseDoc) {
     const err = new Error('Case not found');
     err.statusCode = 404;
     throw err;
   }
 
-  const prevStatus = caseDoc.status;
+  const previousStatus = caseDoc.status;
   caseDoc.status = status;
-  const updaterId = updatedBy?._id || null;
-  caseDoc.timeline.push({ status, note: note || '', updatedBy: updaterId });
-  await caseDoc.save();
-
-  if (updaterId) {
-    await AuditLog.create({
-      action: 'case.status_changed',
-      performedBy: updaterId,
-      targetResource: 'Case',
-      targetId: caseDoc._id,
-      metadata: { previousStatus: prevStatus, newStatus: status, note },
-    });
+  if (status === 'rejected') {
+    caseDoc.rejectionReason = reason || note || 'Case requirements not met';
   }
 
-  return caseDoc;
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Officer-Specific Methods
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Get cases assigned to a specific officer with filters
- */
-const getAssignedCases = async (officerId, { page = 1, limit = 20, status, category, priority, search } = {}) => {
-  const query = { isDeleted: false };
-  if (officerId) {
-    query.$or = [{ assignedOfficer: officerId }, { assignedOfficer: null }];
-  }
-
-  if (status) query.status = status;
-  if (category) query.category = category;
-  if (priority) query.priority = priority;
-  if (search) query.$text = { $search: search };
-
-  const skip = (page - 1) * limit;
-  const [cases, total] = await Promise.all([
-    Case.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate('reportedBy', 'alias email role')
-      .populate('evidence', 'originalName fileType sizeBytes createdAt'),
-    Case.countDocuments(query),
-  ]);
-
-  return {
-    cases,
-    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-  };
-};
-
-/**
- * Get dashboard statistics for an officer
- */
-const getOfficerStats = async (officerId) => {
-  const baseQuery = { isDeleted: false };
-  if (officerId) {
-    baseQuery.$or = [{ assignedOfficer: officerId }, { assignedOfficer: null }];
-  }
-
-  const [totalAssigned, byStatus, byPriority, recentlyUpdated, critical] = await Promise.all([
-    Case.countDocuments(baseQuery),
-
-    Case.aggregate([
-      { $match: baseQuery },
-      { $group: { _id: '$status', count: { $sum: 1 } } },
-    ]),
-
-    Case.aggregate([
-      { $match: baseQuery },
-      { $group: { _id: '$priority', count: { $sum: 1 } } },
-    ]),
-
-    Case.find(baseQuery)
-      .sort({ updatedAt: -1 })
-      .limit(5)
-      .select('referenceNumber title status priority category updatedAt')
-      .lean(),
-
-    Case.countDocuments({ ...baseQuery, priority: 'critical' }),
-  ]);
-
-  // Compute convenience counts
-  const statusMap = {};
-  byStatus.forEach((s) => { statusMap[s._id] = s.count; });
-
-  return {
-    totalAssigned,
-    awaitingReview: (statusMap['submitted'] || 0) + (statusMap['under_review'] || 0),
-    activeInvestigations: (statusMap['investigating'] || 0) + (statusMap['legal_action_initiated'] || 0),
-    evidenceRequested: statusMap['evidence_requested'] || 0,
-    resolved: (statusMap['resolved'] || 0) + (statusMap['closed'] || 0),
-    critical,
-    byStatus,
-    byPriority,
-    recentlyUpdated,
-  };
-};
-
-/**
- * Add an internal note to a case (officer/admin only)
- */
-const addInternalNote = async (caseId, noteText, officer) => {
-  const query = mongoose.Types.ObjectId.isValid(caseId)
-    ? { _id: caseId, isDeleted: false }
-    : { referenceNumber: caseId, isDeleted: false };
-  const caseDoc = await Case.findOne(query);
-  if (!caseDoc) {
-    const err = new Error('Case not found');
-    err.statusCode = 404;
-    throw err;
-  }
-
-  const officerId = officer?._id || null;
-  caseDoc.internalNotes.push({
-    note: noteText,
-    addedBy: officerId,
-    addedAt: new Date(),
+  caseDoc.timeline.push({
+    status,
+    note: note || reason || `Status updated to ${status}`,
+    updatedBy: updatedBy._id,
   });
   await caseDoc.save();
 
-  if (officerId) {
-    await AuditLog.create({
-      action: 'case.note_added',
-      performedBy: officerId,
-      targetResource: 'Case',
-      targetId: caseDoc._id,
-      metadata: { notePreview: noteText.substring(0, 100) },
-    });
+  // Create citizen notification for assign to lawyer or rejection
+  if (caseDoc.reportedBy) {
+    if (status === 'awaiting_lawyer_selection') {
+      await Notification.create({
+        recipient: caseDoc.reportedBy,
+        case: caseDoc._id,
+        title: 'Thank you for submitting your report.',
+        message:
+          'Your case has been reviewed and approved by our admin team. You can now book a lawyer related to your area from here.',
+        type: 'awaiting_lawyer_selection',
+        actionRoute: '/legal-aid',
+        actionText: 'Find a Lawyer',
+      });
+    } else if (status === 'rejected') {
+      await Notification.create({
+        recipient: caseDoc.reportedBy,
+        case: caseDoc._id,
+        title: 'Your report has been reviewed.',
+        message: `Unfortunately, it was not approved.\nReason: ${reason || note || 'Case requirements not met'}`,
+        type: 'case_rejected',
+        actionRoute: null,
+        actionText: null,
+      });
+    }
   }
-
-  return caseDoc;
-};
-
-/**
- * Assign case to an officer (or self-assign)
- */
-const assignToOfficer = async (caseId, officerId, assignedBy) => {
-  const caseDoc = await Case.findOne({ _id: caseId, isDeleted: false });
-  if (!caseDoc) {
-    const err = new Error('Case not found');
-    err.statusCode = 404;
-    throw err;
-  }
-
-  caseDoc.assignedOfficer = officerId;
-
-  // If the case is still 'submitted', move to 'under_review'
-  if (caseDoc.status === 'submitted') {
-    caseDoc.status = 'under_review';
-    caseDoc.timeline.push({
-      status: 'under_review',
-      note: 'Case assigned to officer for review',
-      updatedBy: assignedBy._id,
-    });
-  }
-
-  await caseDoc.save();
 
   await AuditLog.create({
-    action: 'case.assigned',
-    performedBy: assignedBy._id,
+    action: 'case.status_changed',
+    performedBy: updatedBy._id,
     targetResource: 'Case',
     targetId: caseDoc._id,
-    metadata: { assignedOfficer: officerId },
+    metadata: { previousStatus, newStatus: status, reason: reason || null },
   });
 
-  return caseDoc;
+  const populated = await Case.findById(caseDoc._id)
+    .populate('reportedBy', 'alias email role profile')
+    .populate('assignedOfficer', 'profile.fullName email')
+    .populate('assignedOrganization', 'name type contact')
+    .populate('evidence');
+
+  return populated || caseDoc;
 };
 
-module.exports = {
-  createCase,
-  getCases,
-  getCaseById,
-  getCaseByReferenceNumber,
-  getCasesByReporter,
-  updateCaseStatus,
-  getAssignedCases,
-  getOfficerStats,
-  addInternalNote,
-  assignToOfficer,
+/**
+ * Get cases reported by a specific user (for self-tracking)
+ */
+const getCasesByReporter = async (userId, { page = 1, limit = 20 } = {}) => {
+  const query = { reportedBy: userId, isDeleted: false };
+  const skip = (page - 1) * limit;
+  const [cases, total] = await Promise.all([
+    Case.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).select('-internalNotes').populate('evidence'),
+    Case.countDocuments(query),
+  ]);
+  return { cases, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
 };
 
+module.exports = { createCase, getCases, getCaseById, updateCaseStatus, getCasesByReporter };

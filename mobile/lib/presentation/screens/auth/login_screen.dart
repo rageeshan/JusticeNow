@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../providers/officer_cases_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -18,6 +17,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
+  bool _isAnonymousLoading = false;
 
   @override
   void dispose() {
@@ -28,26 +28,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(authProvider.notifier).login(_emailCtrl.text.trim(), _passwordCtrl.text);
-    if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
+    final result = await ref.read(authProvider.notifier).login(_emailCtrl.text.trim(), _passwordCtrl.text);
+    if (!mounted) return;
+
+    if (result.success) {
       final user = ref.read(authProvider).user;
-      final role = user?['role'];
-      if (role == 'police_officer' || role == 'admin') {
-        ref.read(officerCasesProvider.notifier).fetchCases(force: true);
-        context.go(AppRoutes.officerHome);
+      if (user?['role'] == 'admin') {
+        context.go(AppRoutes.adminDashboard);
       } else {
-        context.go(AppRoutes.myCases);
+        context.go(AppRoutes.home);
       }
+    } else if (result.isPending) {
+      context.push(AppRoutes.pendingApproval);
+    } else if (result.isRejected) {
+      context.push(AppRoutes.rejected, extra: result.rejectionReason);
     }
   }
 
-  Future<void> _loginAsOfficer() async {
-    _emailCtrl.text = 'sasa@2gmail.com';
-    _passwordCtrl.text = '12345678';
-    await ref.read(authProvider.notifier).login('sasa@2gmail.com', '12345678');
-    if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
-      ref.read(officerCasesProvider.notifier).fetchCases(force: true);
-      context.go(AppRoutes.officerHome);
+  Future<void> _reportAnonymously() async {
+    setState(() => _isAnonymousLoading = true);
+    await ref.read(authProvider.notifier).loginAnonymous();
+    if (mounted) {
+      setState(() => _isAnonymousLoading = false);
+      if (ref.read(authProvider).status == AuthStatus.authenticated) {
+        context.go(AppRoutes.reportCase);
+      }
     }
   }
 
@@ -167,19 +172,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
 
+                // ── Anonymous Reporting ──
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: AppColors.textMuted.withValues(alpha: 0.3))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('or', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                    ),
+                    Expanded(child: Divider(color: AppColors.textMuted.withValues(alpha: 0.3))),
+                  ],
+                ),
                 const SizedBox(height: 24),
                 OutlinedButton.icon(
-                  onPressed: authState.isLoading ? null : _loginAsOfficer,
-                  icon: const Icon(Icons.shield_rounded, size: 18, color: AppColors.accent),
-                  label: const Text(
-                    'Sign in as Case Officer (DB Account)',
-                    style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600),
-                  ),
+                  onPressed: _isAnonymousLoading ? null : _reportAnonymously,
+                  icon: _isAnonymousLoading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent),
+                        )
+                      : const Icon(Icons.shield_outlined),
+                  label: const Text('Report Anonymously'),
                   style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.accent,
                     side: BorderSide(color: AppColors.accent.withValues(alpha: 0.5)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    minimumSize: const Size.fromHeight(52),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'No account needed — your identity stays private',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                 ),
               ],
             ),

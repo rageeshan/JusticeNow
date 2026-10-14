@@ -44,13 +44,14 @@ const caseSchema = new mongoose.Schema(
     category: {
       type: String,
       enum: [
-        'police_brutality',
         'arbitrary_detention',
-        'forced_displacement',
-        'freedom_of_expression',
-        'gender_based_violence',
-        'labor_rights',
+        'torture',
+        'forced_disappearance',
+        'extrajudicial_killing',
         'discrimination',
+        'freedom_of_expression',
+        'freedom_of_assembly',
+        'right_to_fair_trial',
         'other',
       ],
       required: true,
@@ -81,11 +82,29 @@ const caseSchema = new mongoose.Schema(
         'evidence_requested',
         'referred_to_ngo',
         'legal_action_initiated',
+        'awaiting_lawyer_selection',
+        'waiting_for_lawyer_approval',
+        'approved_scheduled',
+        'in_progress',
+        'completed',
+        'lawyer_declined',
         'resolved',
         'closed',
         'rejected',
       ],
       default: 'submitted',
+    },
+
+    rejectionReason: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+
+    lawyerDeclineReason: {
+      type: String,
+      default: null,
+      trim: true,
     },
 
     priority: {
@@ -105,17 +124,36 @@ const caseSchema = new mongoose.Schema(
       default: true,
     },
 
-    // Optional contact info for non-anonymous reporters (never shown publicly)
-    contactName: {
-      type: String,
+    // Assigned lawyer
+    assignedLawyer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
       default: null,
-      trim: true,
     },
-    contactEmail: {
+
+    // Citizen booking details
+    preferredContactMethod: {
+      type: String,
+      enum: ['Call', 'Email', 'In-app', null],
+      default: null,
+    },
+    citizenMessageToLawyer: {
       type: String,
       default: null,
-      lowercase: true,
-      trim: true,
+    },
+
+    // Scheduled consultation / meeting
+    scheduledMeetingDate: {
+      type: Date,
+      default: null,
+    },
+    scheduledMeetingTime: {
+      type: String,
+      default: null,
+    },
+    completedAt: {
+      type: Date,
+      default: null,
     },
 
     // Assigned case officer

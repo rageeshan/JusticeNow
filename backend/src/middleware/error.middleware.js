@@ -47,9 +47,9 @@ const errorHandler = (err, req, res, next) => {
   // Generic server error
   const statusCode = err.statusCode || 500;
   const message =
-    process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message;
+    process.env.NODE_ENV === 'production' && !err.statusCode ? 'Internal server error' : err.message;
 
-  return sendError(res, message, statusCode);
+  return sendError(res, message, statusCode, null, err.data || null);
 };
 
 /**
