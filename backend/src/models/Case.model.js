@@ -86,6 +86,11 @@ const caseSchema = new mongoose.Schema(
         'waiting_for_lawyer_approval',
         'approved_scheduled',
         'in_progress',
+        'in_progress_police',
+        'assigned_to_police',
+        'police_declined',
+        'suspect_identified',
+        'referred_to_court',
         'completed',
         'lawyer_declined',
         'resolved',
@@ -105,6 +110,27 @@ const caseSchema = new mongoose.Schema(
       type: String,
       default: null,
       trim: true,
+    },
+
+    policeDeclineReason: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+
+    investigationStartDate: {
+      type: Date,
+      default: null,
+    },
+
+    investigationStartTime: {
+      type: String,
+      default: null,
+    },
+
+    assignedToPoliceAt: {
+      type: Date,
+      default: null,
     },
 
     priority: {

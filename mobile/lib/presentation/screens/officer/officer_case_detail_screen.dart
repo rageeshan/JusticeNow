@@ -1,1052 +1,1106 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../providers/officer_cases_provider.dart';
+import '../../../data/repositories/case_repository.dart';
+import '../../../data/services/api_service.dart';
+import 'officer_case_preview_modal.dart';
 
-class OfficerCaseDetailScreen extends ConsumerWidget {
+class OfficerCaseDetailScreen extends StatefulWidget {
   final String caseId;
-  const OfficerCaseDetailScreen({super.key, required this.caseId});
+  final Map<String, dynamic>? initialCase;
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final caseData = ref.watch(officerCaseByIdProvider(caseId));
-
-    if (caseData == null) {
-      return Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(title: const Text('Case Details')),
-        body: const Center(
-          child: Text('Case not found', style: TextStyle(color: AppColors.error)),
-        ),
-      );
-    }
-
-    final status = caseData['status'] as String? ?? '';
-    final isTerminal = status == 'resolved' || status == 'closed' || status == 'rejected';
-    final evidence = (caseData['evidence'] as List?) ?? [];
-    final timeline = (caseData['timeline'] as List?) ?? [];
-    final publicUpdates = (caseData['publicUpdates'] as List?) ?? [];
-    final internalNotes = (caseData['internalNotes'] as List?) ?? [];
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text((caseData['referenceNumber'] ?? 'Case Details').toString()),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          (caseData['referenceNumber'] ?? '').toString(),
-                          style: const TextStyle(
-                            color: AppColors.accent,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                      _StatusBadge(status: status),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    (caseData['title'] ?? '').toString(),
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    (AppConstants.caseCategories[caseData['category']] ??
-                            caseData['category'] ??
-                            '')
-                        .toString(),
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                  ),
-                  const SizedBox(height: 20),
-
-                  _InfoStrip(caseData: caseData),
-                  const SizedBox(height: 24),
-
-                  const _SectionTitle('Description'),
-                  const SizedBox(height: 8),
-                  Text(
-                    (caseData['description'] ?? '').toString(),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      height: 1.6,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  Row(
-                    children: [
-                      const Expanded(child: _SectionTitle('Evidence Submitted')),
-                      Text(
-                        '${evidence.length} file${evidence.length == 1 ? '' : 's'}',
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (evidence.isEmpty)
-                    const _EmptyBlock(
-                      icon: Icons.folder_off_outlined,
-                      message: 'No evidence uploaded yet',
-                    )
-                  else
-                    ...evidence.map(
-                      (e) => _EvidenceTile(evidence: Map<String, dynamic>.from(e as Map)),
-                    ),
-                  const SizedBox(height: 24),
-
-                  if (timeline.isNotEmpty) ...[
-                    const _SectionTitle('Timeline'),
-                    const SizedBox(height: 12),
-                    ...timeline.map(
-                      (event) => _TimelineItem(
-                        event: Map<String, dynamic>.from(event as Map),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (publicUpdates.isNotEmpty) ...[
-                    const _SectionTitle('Updates to Reporter'),
-                    const SizedBox(height: 12),
-                    ...publicUpdates.map(
-                      (u) => _MessageCard(
-                        text: (u as Map)['message']?.toString() ?? '',
-                        accent: AppColors.info,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (internalNotes.isNotEmpty) ...[
-                    const _SectionTitle('Internal Notes (Staff)'),
-                    const SizedBox(height: 12),
-                    ...internalNotes.map(
-                      (n) => _MessageCard(
-                        text: (n as Map)['note']?.toString() ?? '',
-                        accent: AppColors.warning,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (caseData['adminFeedback'] != null) ...[
-                    const _SectionTitle('Admin Feedback'),
-                    const SizedBox(height: 8),
-                    _MessageCard(
-                      text: caseData['adminFeedback'].toString(),
-                      accent: AppColors.accent,
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (caseData['userFeedback'] != null) ...[
-                    const _SectionTitle('User Feedback'),
-                    const SizedBox(height: 8),
-                    _MessageCard(
-                      text: caseData['userFeedback'].toString(),
-                      accent: AppColors.success,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          if (!isTerminal) _ActionBar(caseId: caseId, status: status, caseData: caseData),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionBar extends ConsumerWidget {
-  final String caseId;
-  final String status;
-  final Map<String, dynamic> caseData;
-  const _ActionBar({
+  const OfficerCaseDetailScreen({
+    super.key,
     required this.caseId,
-    required this.status,
-    required this.caseData,
+    this.initialCase,
   });
 
-  bool get isInvestigating => status == 'investigating';
+  @override
+  State<OfficerCaseDetailScreen> createState() => _OfficerCaseDetailScreenState();
+}
 
-  bool get canInvestigate =>
-      !isInvestigating &&
-      status != 'resolved' &&
-      status != 'closed' &&
-      status != 'rejected';
+class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
+  final CaseRepository _repo = CaseRepository();
+
+  bool _isLoading = true;
+  bool _isActionLoading = false;
+  Map<String, dynamic>? _case;
+
+  // Saved availability schedule for slot selection
+  Map<String, dynamic> _availability = {};
+  List<dynamic> _activeCases = [];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        14,
-        16,
-        14 + MediaQuery.of(context).padding.bottom,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.primaryDark,
-        border: Border(top: BorderSide(color: AppColors.divider)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black38,
-            blurRadius: 12,
-            offset: Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (isInvestigating) ...[
-            // Status banner indicating active investigation
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: AppColors.statusInvestigating.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.statusInvestigating.withValues(alpha: 0.3)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.radar_rounded, size: 16, color: AppColors.statusInvestigating),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'ACTIVE INVESTIGATION IN PROGRESS',
-                      style: TextStyle(
-                        color: AppColors.statusInvestigating,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // High-visibility button: Close / Complete Investigation
-            ElevatedButton.icon(
-              onPressed: () => _showCloseFeedbackSheet(context, ref),
-              icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
-              label: const Text(
-                'Close Investigation / Conclude Case',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.success,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ] else if (canInvestigate) ...[
-            // High-visibility button: Start Investigation
-            ElevatedButton.icon(
-              onPressed: () => _confirmInvestigate(context, ref),
-              icon: const Icon(Icons.play_arrow_rounded, size: 22),
-              label: const Text(
-                'Start Investigation',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                foregroundColor: AppColors.primaryDark,
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 10),
-
-          // Secondary Action Row: Request Evidence & Add Note
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showRequestEvidenceSheet(context, ref),
-                  icon: const Icon(Icons.playlist_add_check_rounded, size: 17),
-                  label: const Text('Request Evidence'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(42),
-                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showAddNoteSheet(context, ref),
-                  icon: const Icon(Icons.note_add_outlined, size: 17),
-                  label: const Text('Add Note'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(42),
-                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+  void initState() {
+    super.initState();
+    _case = widget.initialCase;
+    _fetchCaseDetails();
+    _fetchOfficerAvailability();
   }
 
-  Future<void> _showAddNoteSheet(BuildContext context, WidgetRef ref) async {
-    final noteCtrl = TextEditingController();
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            20 + MediaQuery.of(ctx).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Add Confidential Staff Note',
-                style: Theme.of(ctx).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'This note is strictly confidential and will NEVER be visible to the reporter or public.',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: noteCtrl,
-                maxLines: 4,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Investigation Finding / Lead',
-                  hintText: 'Enter confidential observations, witness leads, or legal assessment...',
-                  alignLabelWithHint: true,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (noteCtrl.text.trim().isEmpty) return;
-                  ref.read(officerCasesProvider.notifier).addInternalNote(
-                        caseId: caseId,
-                        note: noteCtrl.text.trim(),
-                      );
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Confidential staff note added to case file.'),
-                      backgroundColor: AppColors.primary,
-                    ),
-                  );
-                },
-                child: const Text('Save Confidential Note'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-
-  Future<void> _confirmInvestigate(BuildContext context, WidgetRef ref) async {
-    final evidenceCount = (caseData['evidence'] as List?)?.length ?? 0;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Start Investigation?'),
-        content: Text(
-          evidenceCount == 0
-              ? 'This case has no evidence. Are you sure you want to investigate without additional files?'
-              : 'Evidence looks sufficient ($evidenceCount file${evidenceCount == 1 ? '' : 's'}). Proceed to investigate this case?',
-          style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Investigate', style: TextStyle(color: AppColors.accent)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && context.mounted) {
-      await ref.read(officerCasesProvider.notifier).startInvestigation(caseId: caseId);
-      if (context.mounted) {
+  Future<void> _fetchCaseDetails() async {
+    setState(() => _isLoading = _case == null);
+    try {
+      final data = await _repo.getCaseById(widget.caseId);
+      if (mounted) {
+        setState(() {
+          _case = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Case moved to Investigating'),
-            backgroundColor: AppColors.primary,
+          SnackBar(
+            content: Text('Failed to load case details: $e'),
+            backgroundColor: AppColors.error,
           ),
         );
       }
     }
   }
 
-  Future<void> _showRequestEvidenceSheet(BuildContext context, WidgetRef ref) async {
-    final messageCtrl = TextEditingController(
-      text:
-          'Additional evidence is required to proceed. Please upload supporting documents, photos, or witness information.',
-    );
-    final noteCtrl = TextEditingController();
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            20 + MediaQuery.of(ctx).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Request More Evidence',
-                style: Theme.of(ctx).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'The reporter will see this message as a case update.',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: messageCtrl,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Message to reporter',
-                  alignLabelWithHint: true,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: noteCtrl,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Internal note (optional)',
-                  hintText: 'Why evidence is insufficient…',
-                  alignLabelWithHint: true,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (messageCtrl.text.trim().isEmpty) return;
-                  ref.read(officerCasesProvider.notifier).requestEvidence(
-                        caseId: caseId,
-                        message: messageCtrl.text.trim(),
-                        internalNote: noteCtrl.text,
-                      );
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Evidence requested from reporter'),
-                      backgroundColor: AppColors.primary,
-                    ),
-                  );
-                },
-                child: const Text('Send Request'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  Future<void> _fetchOfficerAvailability() async {
+    try {
+      final response = await ApiService.instance.client.get('/cases/officer/availability');
+      final avail = response.data['data']?['availability'];
+      final active = await _repo.getPoliceCases('in_progress');
+      if (mounted) {
+        setState(() {
+          if (avail is Map) {
+            _availability = Map<String, dynamic>.from(avail);
+          }
+          _activeCases = active;
+        });
+      }
+    } catch (_) {}
   }
 
-  Future<void> _showCloseFeedbackSheet(BuildContext context, WidgetRef ref) async {
-    final adminCtrl = TextEditingController();
-    final userCtrl = TextEditingController();
-    var resolve = true;
+  String _formatDate(dynamic dateVal) {
+    if (dateVal == null) return 'N/A';
+    try {
+      final dt = DateTime.parse(dateVal.toString()).toLocal();
+      return DateFormat('MMMM dd, yyyy').format(dt);
+    } catch (_) {
+      return dateVal.toString();
+    }
+  }
 
-    await showModalBottomSheet<void>(
+  /// Accept Case Flow with Availability slot picker
+  Future<void> _showAcceptDialog() async {
+    DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
+    String? selectedTimeSlot;
+
+    // Check if the weekday is marked Unavailable
+    bool isDayUnavailable(DateTime dt) {
+      final dayName = DateFormat('EEEE').format(dt);
+      final dayData = _availability[dayName];
+      return dayData is Map && dayData['isUnavailable'] == true;
+    }
+
+    // Get ONLY saved duty slots for the day
+    List<String> getSavedSlotsForDay(DateTime dt) {
+      final dayName = DateFormat('EEEE').format(dt);
+      final dayData = _availability[dayName];
+      if (dayData is Map && dayData['isUnavailable'] != true) {
+        final rawSlots = dayData['slots'] as List<dynamic>? ?? [];
+        return rawSlots.map((s) {
+          if (s is Map) {
+            return '${s['startTime']} - ${s['endTime']}';
+          }
+          return s.toString();
+        }).toList();
+      }
+      return [];
+    }
+
+    // Identify already booked slots for the officer on this specific date
+    Set<String> getBookedSlotsForDate(DateTime dt) {
+      final dateStr = DateFormat('yyyy-MM-dd').format(dt);
+      final booked = <String>{};
+      for (final activeCase in _activeCases) {
+        if (activeCase is Map && activeCase['_id']?.toString() != widget.caseId) {
+          final caseDateRaw = activeCase['investigationStartDate'];
+          if (caseDateRaw != null) {
+            try {
+              final cDate = DateTime.parse(caseDateRaw.toString()).toLocal();
+              final cDateStr = DateFormat('yyyy-MM-dd').format(cDate);
+              if (cDateStr == dateStr && activeCase['investigationStartTime'] != null) {
+                booked.add(activeCase['investigationStartTime'].toString().trim());
+              }
+            } catch (_) {}
+          }
+        }
+      }
+      return booked;
+    }
+
+    final confirmed = await showDialog<bool>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      barrierDismissible: false,
       builder: (ctx) {
         return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return Padding(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                20,
-                20,
-                20 + MediaQuery.of(ctx).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.divider,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+          builder: (ctx, setDialogState) {
+            final dayName = DateFormat('EEEE').format(selectedDate);
+            final dayUnavailable = isDayUnavailable(selectedDate);
+            final savedSlots = getSavedSlotsForDay(selectedDate);
+            final bookedSlots = getBookedSlotsForDate(selectedDate);
+            final availableSlots = savedSlots.where((s) => !bookedSlots.contains(s.trim())).toList();
+
+            if (selectedTimeSlot == null && availableSlots.isNotEmpty) {
+              selectedTimeSlot = availableSlots.first;
+            } else if (selectedTimeSlot != null && !availableSlots.contains(selectedTimeSlot)) {
+              selectedTimeSlot = availableSlots.isNotEmpty ? availableSlots.first : null;
+            }
+
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: const [
+                  Icon(Icons.check_circle_outline_rounded, color: AppColors.success),
+                  SizedBox(width: 8),
                   Text(
-                    'Feedback & Close',
-                    style: Theme.of(ctx).textTheme.titleLarge,
+                    'Accept Case Investigation',
+                    style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Provide feedback for admin and the reporter, then close the case.',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: adminCtrl,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Feedback for Admin',
-                      hintText: 'Internal findings, recommendations…',
-                      alignLabelWithHint: true,
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Pick investigation start date & time from your saved duty availability slots:',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: userCtrl,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Feedback for User',
-                      hintText: 'Outcome summary shared with reporter…',
-                      alignLabelWithHint: true,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            resolve ? 'Mark as Resolved' : 'Mark as Closed',
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w500,
+                    const SizedBox(height: 16),
+
+                    // Date Picker Trigger
+                    const Text('Investigation Start Date *',
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: ctx,
+                          initialDate: selectedDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 60)),
+                          builder: (c, child) => Theme(
+                            data: Theme.of(c).copyWith(
+                              colorScheme: const ColorScheme.dark(
+                                primary: AppColors.accent,
+                                surface: AppColors.surface,
+                              ),
                             ),
-                          ),
-                        ),
-                        Switch(
-                          value: resolve,
-                          activeThumbColor: AppColors.accent,
-                          onChanged: (v) => setModalState(() => resolve = v),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (adminCtrl.text.trim().isEmpty || userCtrl.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Both feedback fields are required'),
-                            backgroundColor: AppColors.error,
+                            child: child!,
                           ),
                         );
-                        return;
-                      }
-                      ref.read(officerCasesProvider.notifier).submitFeedbackAndClose(
-                            caseId: caseId,
-                            adminFeedback: adminCtrl.text.trim(),
-                            userFeedback: userCtrl.text.trim(),
-                            resolve: resolve,
-                          );
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            resolve ? 'Case resolved and closed' : 'Case closed',
-                          ),
-                          backgroundColor: AppColors.primary,
-                        ),
-                      );
-                    },
-                    child: Text(resolve ? 'Resolve & Close' : 'Close Case'),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class _InfoStrip extends StatelessWidget {
-  final Map<String, dynamic> caseData;
-  const _InfoStrip({required this.caseData});
-
-  @override
-  Widget build(BuildContext context) {
-    final locMap = caseData['location'] is Map ? caseData['location'] as Map : null;
-    final location = [
-      locMap?['address'],
-      locMap?['city'],
-      locMap?['state'],
-      locMap?['country'],
-    ].where((v) => v != null && v.toString().trim().isNotEmpty).join(', ');
-
-    final isAnon = caseData['isAnonymous'] == true;
-    final reporterName = caseData['contactName'] ??
-        caseData['reportedByAlias'] ??
-        caseData['contactEmail'] ??
-        'Registered Citizen';
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        children: [
-          _DetailRow(
-            icon: Icons.calendar_today_outlined,
-            label: 'Incident Date',
-            value: caseData['incidentDate']?.toString().split('T').first ?? 'N/A',
-          ),
-          _DetailRow(
-            icon: Icons.location_on_outlined,
-            label: 'Location',
-            value: location.isNotEmpty ? location : 'Not specified',
-          ),
-          _DetailRow(
-            icon: Icons.priority_high_rounded,
-            label: 'Priority',
-            value: (AppConstants.priorityLabels[caseData['priority']] ??
-                    caseData['priority'] ??
-                    'Medium')
-                .toString(),
-          ),
-          _DetailRow(
-            icon: isAnon ? Icons.shield_outlined : Icons.person_outline_rounded,
-            label: 'Reporter',
-            value: isAnon
-                ? 'Anonymous (${caseData['reportedByAlias'] ?? 'Protected'})'
-                : reporterName.toString(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EvidenceTile extends StatelessWidget {
-  final Map<String, dynamic> evidence;
-  const _EvidenceTile({required this.evidence});
-
-  IconData get _icon => switch (evidence['fileType']) {
-        'image' => Icons.image_outlined,
-        'video' => Icons.videocam_outlined,
-        'audio' => Icons.audiotrack_outlined,
-        'document' => Icons.description_outlined,
-        _ => Icons.insert_drive_file_outlined,
-      };
-
-  Color get _color => switch (evidence['fileType']) {
-        'image' => AppColors.info,
-        'video' => AppColors.accent,
-        'audio' => AppColors.warning,
-        'document' => AppColors.success,
-        _ => AppColors.textMuted,
-      };
-
-  String _formatSize(int? bytes) {
-    if (bytes == null) return '';
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: _color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(_icon, color: _color, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  (evidence['originalName'] ?? 'File').toString(),
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                if ((evidence['description'] as String?)?.isNotEmpty == true) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    evidence['description'] as String,
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4),
-                  ),
-                ],
-                const SizedBox(height: 6),
-                Text(
-                  [
-                    (evidence['fileType'] as String?)?.toUpperCase() ?? 'FILE',
-                    _formatSize(evidence['sizeBytes'] as int?),
-                  ].where((s) => s.isNotEmpty).join(' · '),
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.verified_rounded, size: 10, color: AppColors.success),
-                      SizedBox(width: 3),
-                      Text(
-                        'SHA-256 Custody Verified',
-                        style: TextStyle(
-                          color: AppColors.success,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () {
-              showDialog<void>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  backgroundColor: AppColors.surface,
-                  title: Text((evidence['originalName'] ?? 'Evidence File').toString()),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        height: 120,
-                        width: double.infinity,
+                        if (picked != null) {
+                          setDialogState(() {
+                            selectedDate = picked;
+                            final slots = getSavedSlotsForDay(picked);
+                            final booked = getBookedSlotsForDate(picked);
+                            final open = slots.where((s) => !booked.contains(s.trim())).toList();
+                            selectedTimeSlot = open.isNotEmpty ? open.first : null;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
                           color: AppColors.primaryDark,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
-                        child: Center(
-                          child: Icon(_icon, color: _color, size: 48),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              DateFormat('EEEE, MMM dd, yyyy').format(selectedDate),
+                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                            ),
+                            const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.accent),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Type: ${(evidence['fileType'] as String?)?.toUpperCase() ?? 'FILE'} · ${_formatSize(evidence['sizeBytes'] as int?)}',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Time Slot Picker with double-booking prevention
+                    const Text('Saved Duty Time Slot *',
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    if (dayUnavailable)
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          'You are marked Unavailable on $dayName. Please pick another date or update your schedule in Set Availability.',
+                          style: const TextStyle(color: AppColors.error, fontSize: 12),
+                        ),
+                      )
+                    else if (savedSlots.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          'No duty slots saved for $dayName. Please define availability in Set Availability.',
+                          style: const TextStyle(color: AppColors.warning, fontSize: 12),
+                        ),
+                      )
+                    else if (availableSlots.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          'All saved duty slots for this day are already booked for active investigations (${bookedSlots.join(', ')}). Choose another date to prevent double-booking.',
+                          style: const TextStyle(color: AppColors.error, fontSize: 12),
+                        ),
+                      )
+                    else ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryDark,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.divider),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: selectedTimeSlot,
+                            isExpanded: true,
+                            dropdownColor: AppColors.primaryDark,
+                            items: availableSlots.map((slot) {
+                              return DropdownMenuItem(
+                                value: slot,
+                                child: Text(slot, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              setDialogState(() => selectedTimeSlot = val);
+                            },
+                          ),
+                        ),
                       ),
-                      if (evidence['description'] != null) ...[
+                      if (bookedSlots.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
-                          evidence['description'].toString(),
-                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                          'Note: ${bookedSlots.length} slot(s) already booked on this day (double-booking prevented).',
+                          style: const TextStyle(color: AppColors.warning, fontSize: 11),
                         ),
                       ],
                     ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Close', style: TextStyle(color: AppColors.accent)),
+                    const SizedBox(height: 14),
+
+                    // Notification Info
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.info.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Icon(Icons.notifications_active_outlined, color: AppColors.info, size: 16),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'A notification with this start schedule will be automatically dispatched to the citizen.',
+                              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              );
-            },
-            icon: const Icon(Icons.visibility_outlined, size: 20, color: AppColors.textSecondary),
-            tooltip: 'Preview',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  const _SectionTitle(this.title);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: AppColors.textSecondary,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.8,
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
-
-  Color get color => switch (status) {
-        'submitted' => AppColors.statusSubmitted,
-        'under_review' => AppColors.statusUnderReview,
-        'investigating' => AppColors.statusInvestigating,
-        'evidence_requested' => AppColors.warning,
-        'resolved' => AppColors.statusResolved,
-        'closed' => AppColors.statusClosed,
-        'rejected' => AppColors.statusRejected,
-        _ => AppColors.textMuted,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        AppConstants.caseStatusLabels[status] ?? status,
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  const _DetailRow({required this.icon, required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppColors.textMuted),
-          const SizedBox(width: 12),
-          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
               ),
-            ),
-          ),
-        ],
-      ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+                ),
+                ElevatedButton(
+                  onPressed: (selectedTimeSlot == null)
+                      ? null
+                      : () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Confirm & Accept'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
-  }
-}
 
-class _TimelineItem extends StatelessWidget {
-  final Map<String, dynamic> event;
-  const _TimelineItem({required this.event});
+    if (confirmed == true && selectedTimeSlot != null) {
+      setState(() => _isActionLoading = true);
+      try {
+        final formattedDateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
+        await _repo.acceptPoliceCase(
+          widget.caseId,
+          startDate: formattedDateStr,
+          startTime: selectedTimeSlot!,
+        );
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: const BoxDecoration(
-                color: AppColors.accent,
-                shape: BoxShape.circle,
-              ),
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Case accepted! Investigation started & citizen notified.'),
+              backgroundColor: AppColors.success,
             ),
-            Container(width: 2, height: 40, color: AppColors.divider),
+          );
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isActionLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to accept case: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
+  }
+
+  /// Reject / Forward Back Flow with required reason
+  Future<void> _showRejectDialog() async {
+    final reasonController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.assignment_return_outlined, color: AppColors.error),
+            SizedBox(width: 8),
+            Text(
+              'Forward Back to Admin',
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please provide a reason for declining. This case will be returned to the admin pool for reassignment.',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: reasonController,
+                maxLines: 3,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                decoration: const InputDecoration(
+                  hintText: 'Enter reason (e.g. Jurisdiction conflict, heavy caseload, outside division)...',
+                  alignLabelWithHint: true,
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Please enter a decline reason' : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Send to Admin'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && reasonController.text.trim().isNotEmpty) {
+      setState(() => _isActionLoading = true);
+      try {
+        await _repo.rejectPoliceCase(
+          widget.caseId,
+          reason: reasonController.text.trim(),
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Case declined and forwarded to Admin for reassignment.'),
+              backgroundColor: AppColors.info,
+            ),
+          );
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isActionLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to decline case: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
+  }
+
+  /// Update stage dropdown
+  Future<void> _updateStage(String stage) async {
+    setState(() => _isActionLoading = true);
+    try {
+      await _repo.updatePoliceCaseStage(widget.caseId, stage: stage);
+      await _fetchCaseDetails();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Investigation stage updated to ${stage.replaceAll('_', ' ').toUpperCase()}'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update stage: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isActionLoading = false);
+    }
+  }
+
+  /// Complete Case
+  Future<void> _markCompleted() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('Conclude Investigation?', style: TextStyle(color: AppColors.textPrimary)),
+        content: const Text(
+          'Are you sure you want to mark this investigation as Completed? This will conclude the active case.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+            child: const Text('Mark Completed'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isActionLoading = true);
+      try {
+        await _repo.completePoliceCase(widget.caseId);
+        await _fetchCaseDetails();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Case successfully marked as Completed!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to complete case: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isActionLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Case Details')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final c = _case ?? {};
+    final status = c['status']?.toString() ?? 'submitted';
+    final isPending = status == 'assigned_to_police' || status == 'submitted' || status == 'under_review';
+    final isInProgress = status == 'in_progress_police' ||
+        status == 'in_progress' ||
+        status == 'investigating' ||
+        status == 'suspect_identified' ||
+        status == 'referred_to_court';
+
+    // Section 1: Citizen Details
+    final reportedBy = c['reportedBy'] as Map<String, dynamic>? ?? {};
+    final profile = reportedBy['profile'] as Map<String, dynamic>? ?? {};
+    final citizenName = profile['fullName']?.toString().isNotEmpty == true
+        ? profile['fullName']
+        : (reportedBy['alias']?.toString() ?? 'Citizen (Anonymous)');
+    final nic = profile['nic']?.toString() ?? 'Not provided';
+    final email = reportedBy['email']?.toString() ?? 'Not provided';
+    final phone = profile['phone']?.toString() ?? 'Not provided';
+    final gender = profile['gender']?.toString() ?? 'Not specified';
+    final province = profile['province']?.toString() ?? 'Not specified';
+    final district = profile['district']?.toString() ?? 'Not specified';
+
+    // Section 2: Report Details
+    final title = c['title']?.toString() ?? 'Untitled Case';
+    final description = c['description']?.toString() ?? 'No description provided';
+    final category = AppConstants.caseCategories[c['category']] ?? c['category'] ?? 'Human Rights';
+    final incidentDate = _formatDate(c['incidentDate']);
+
+    final locRaw = c['location'];
+    final loc = locRaw is Map ? Map<String, dynamic>.from(locRaw) : <String, dynamic>{};
+    final locationText = [loc['address'], loc['city'], loc['state']]
+        .where((s) => s != null && s.toString().trim().isNotEmpty)
+        .join(', ');
+    final incidentLocation = locationText.isNotEmpty ? locationText : 'Not mentioned';
+
+    // Section 3: Evidence
+    final evidenceList = (c['evidence'] as List<dynamic>? ?? []).cast<dynamic>();
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(c['referenceNumber']?.toString() ?? 'Police Case Detail'),
+        backgroundColor: AppColors.primaryDark,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
+            onPressed: _fetchCaseDetails,
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                (AppConstants.caseStatusLabels[event['status']] ??
-                        event['status'] ??
-                        '')
-                    .toString(),
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
+              // Case Status Header Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isPending
+                            ? AppColors.warning.withValues(alpha: 0.15)
+                            : (isInProgress
+                                ? AppColors.info.withValues(alpha: 0.15)
+                                : AppColors.success.withValues(alpha: 0.15)),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isPending
+                            ? Icons.pending_actions_rounded
+                            : (isInProgress
+                                ? Icons.run_circle_outlined
+                                : Icons.check_circle_outline_rounded),
+                        color: isPending
+                            ? AppColors.warning
+                            : (isInProgress ? AppColors.info : AppColors.success),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isPending
+                                ? 'Assigned by Admin (Pending Acceptance)'
+                                : (isInProgress
+                                    ? 'Investigation In Progress'
+                                    : 'Investigation Completed'),
+                            style: TextStyle(
+                              color: isPending
+                                  ? AppColors.warning
+                                  : (isInProgress ? AppColors.info : AppColors.success),
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Ref: ${c['referenceNumber'] ?? 'N/A'}',
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              if (event['note'] != null && (event['note'] as String).isNotEmpty)
-                Text(
-                  event['note'] as String,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              const SizedBox(height: 18),
+
+              // ─────────────────────────────────────────────────────────────
+              // Section 1 – Citizen Details
+              // ─────────────────────────────────────────────────────────────
+              _buildSectionHeader(Icons.person_rounded, 'Section 1 – Citizen Details'),
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.divider),
                 ),
-              const SizedBox(height: 16),
+                child: Column(
+                  children: [
+                    _buildDetailRow('Name', citizenName),
+                    _buildDetailRow('NIC', nic),
+                    _buildDetailRow('Email', email),
+                    _buildDetailRow('Mobile', phone),
+                    _buildDetailRow('Gender', gender),
+                    _buildDetailRow('Province', province),
+                    _buildDetailRow('District', district, isLast: true),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ─────────────────────────────────────────────────────────────
+              // Section 2 – Report Details
+              // ─────────────────────────────────────────────────────────────
+              _buildSectionHeader(Icons.article_rounded, 'Section 2 – Report Details'),
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDetailRow('Report Title', title),
+                    _buildDetailRow('Category', category),
+                    _buildDetailRow('Incident Date', incidentDate),
+                    _buildDetailRow('Incident Location', incidentLocation),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Description',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryDark,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        description,
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, height: 1.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ─────────────────────────────────────────────────────────────
+              // Section 3 – Evidence
+              // ─────────────────────────────────────────────────────────────
+              _buildSectionHeader(Icons.perm_media_rounded, 'Section 3 – Evidence (${evidenceList.length})'),
+              const SizedBox(height: 10),
+              if (evidenceList.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Column(
+                    children: const [
+                      Icon(Icons.perm_media_outlined, color: AppColors.textMuted, size: 36),
+                      SizedBox(height: 8),
+                      Text('No evidence files uploaded for this case',
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    ],
+                  ),
+                )
+              else
+                _buildEvidenceSection(evidenceList),
+
+              // In Progress extra options: Stages & Schedule
+              if (isInProgress) ...[
+                const SizedBox(height: 20),
+                _buildSectionHeader(Icons.timeline_rounded, 'Investigation Stages & Status'),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (c['investigationStartDate'] != null) ...[
+                        Row(
+                          children: [
+                            const Icon(Icons.alarm_on_rounded, color: AppColors.accent, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Scheduled Start: ${_formatDate(c['investigationStartDate'])} • ${c['investigationStartTime'] ?? 'On Duty'}',
+                                style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(color: AppColors.divider, height: 24),
+                      ],
+                      const Text(
+                        'Update Investigation Stage',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: ['investigating', 'suspect_identified', 'referred_to_court', 'closed'].contains(status)
+                            ? status
+                            : 'investigating',
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.assignment_turned_in_outlined),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'investigating', child: Text('Investigating')),
+                          DropdownMenuItem(value: 'suspect_identified', child: Text('Suspect Identified')),
+                          DropdownMenuItem(value: 'referred_to_court', child: Text('Referred to Court')),
+                          DropdownMenuItem(value: 'closed', child: Text('Closed')),
+                        ],
+                        onChanged: (newStage) {
+                          if (newStage != null && newStage != status) {
+                            _updateStage(newStage);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
+          ),
+        ),
+      ),
+
+      // ─────────────────────────────────────────────────────────────
+      // Section 4 – Action Buttons (bottom)
+      // ─────────────────────────────────────────────────────────────
+      bottomSheet: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.divider)),
+        ),
+        child: _isActionLoading
+            ? const Center(child: CircularProgressIndicator())
+            : isPending
+                ? Row(
+                    children: [
+                      // Reject / Forward Back to Admin
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _showRejectDialog,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.error,
+                            side: const BorderSide(color: AppColors.error),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          label: const Text('Forward to Admin', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Accept Case
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _showAcceptDialog,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.success,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: const Icon(Icons.check_rounded, size: 18),
+                          label: const Text('Accept Case', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  )
+                : isInProgress
+                    ? SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: _markCompleted,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.success,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: const Icon(Icons.done_all_rounded),
+                          label: const Text(
+                            'Mark as Completed',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.verified_rounded, color: AppColors.success, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'This case investigation is completed',
+                              style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(IconData icon, String title) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppColors.accent),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],
     );
   }
-}
 
-class _MessageCard extends StatelessWidget {
-  final String text;
-  final Color accent;
-  const _MessageCard({required this.text, required this.accent});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.5),
+  Widget _buildDetailRow(String label, String value, {bool isLast = false}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }
-}
 
-class _EmptyBlock extends StatelessWidget {
-  final IconData icon;
-  final String message;
-  const _EmptyBlock({required this.icon, required this.message});
+  Widget _buildEvidenceSection(List<dynamic> evidence) {
+    final images = evidence.where((e) {
+      final t = (e is Map ? e['fileType']?.toString() : '')?.toLowerCase() ?? '';
+      final mime = (e is Map ? e['mimeType']?.toString() : '')?.toLowerCase() ?? '';
+      return t == 'image' || mime.contains('image');
+    }).toList();
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: AppColors.textMuted, size: 32),
+    final videos = evidence.where((e) {
+      final t = (e is Map ? e['fileType']?.toString() : '')?.toLowerCase() ?? '';
+      final mime = (e is Map ? e['mimeType']?.toString() : '')?.toLowerCase() ?? '';
+      return t == 'video' || mime.contains('video');
+    }).toList();
+
+    final docs = evidence.where((e) {
+      final t = (e is Map ? e['fileType']?.toString() : '')?.toLowerCase() ?? '';
+      final mime = (e is Map ? e['mimeType']?.toString() : '')?.toLowerCase() ?? '';
+      return !t.contains('image') && !t.contains('video') && !mime.contains('image') && !mime.contains('video');
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Photo Grid
+        if (images.isNotEmpty) ...[
+          const Text('Photos (Tap to preview)',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(message, style: const TextStyle(color: AppColors.textMuted)),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: images.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1.0,
+            ),
+            itemBuilder: (ctx, idx) {
+              final item = Map<String, dynamic>.from(images[idx] as Map);
+              final url = item['fileUrl']?.toString() ?? item['url']?.toString() ?? '';
+              return InkWell(
+                onTap: () => OfficerCasePreviewModal.show(context, item),
+                borderRadius: BorderRadius.circular(10),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    color: AppColors.surface,
+                    child: url.isNotEmpty
+                        ? Image.network(
+                            url,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Center(
+                              child: Icon(Icons.image_not_supported, color: AppColors.textMuted),
+                            ),
+                          )
+                        : const Icon(Icons.image, color: AppColors.accent),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 14),
         ],
-      ),
+
+        // Video Thumbnails
+        if (videos.isNotEmpty) ...[
+          const Text('Videos (Tap to preview)',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...videos.map((v) {
+            final item = Map<String, dynamic>.from(v as Map);
+            return Card(
+              color: AppColors.surface,
+              margin: const EdgeInsets.only(bottom: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDark,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.videocam_rounded, color: AppColors.accent),
+                ),
+                title: Text(
+                  item['originalName']?.toString() ?? 'Video Evidence',
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                subtitle: const Text('Tap to view details', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                trailing: const Icon(Icons.play_circle_outline_rounded, color: AppColors.accent),
+                onTap: () => OfficerCasePreviewModal.show(context, item),
+              ),
+            );
+          }),
+          const SizedBox(height: 14),
+        ],
+
+        // Documents / PDFs
+        if (docs.isNotEmpty) ...[
+          const Text('PDFs & Documents (Tap to preview)',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...docs.map((d) {
+            final item = Map<String, dynamic>.from(d as Map);
+            return Card(
+              color: AppColors.surface,
+              margin: const EdgeInsets.only(bottom: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDark,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.error),
+                ),
+                title: Text(
+                  item['originalName']?.toString() ?? 'Document',
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  'Size: ${(item['fileSize'] != null ? (item['fileSize'] / 1024).toStringAsFixed(1) : 'Unknown')} KB',
+                  style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                ),
+                trailing: const Icon(Icons.open_in_new_rounded, color: AppColors.accent, size: 18),
+                onTap: () => OfficerCasePreviewModal.show(context, item),
+              ),
+            );
+          }),
+        ],
+      ],
     );
   }
 }

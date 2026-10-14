@@ -12,6 +12,9 @@ import '../legal_aid/counsel_cases_screen.dart';
 import '../legal_aid/manage_availability_screen.dart';
 import '../legal_aid/submit_ad_screen.dart';
 import '../legal_aid/lawyer_profile_update_screen.dart';
+import '../officer/officer_my_cases_screen.dart';
+import '../officer/officer_manage_availability_screen.dart';
+import '../officer/officer_profile_update_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -44,7 +47,9 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(role == 'lawyer' ? 'Lawyer Dashboard' : 'JusticeNow'),
+        title: Text(role == 'lawyer'
+            ? 'Lawyer Dashboard'
+            : (role == 'police_officer' ? 'Police Dashboard' : 'JusticeNow')),
         backgroundColor: AppColors.primaryDark,
         actions: [
           if (role == 'lawyer') ...[
@@ -55,6 +60,17 @@ class HomeScreen extends ConsumerWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const LawyerProfileUpdateScreen()),
+                );
+              },
+            ),
+          ] else if (role == 'police_officer') ...[
+            IconButton(
+              icon: const Icon(Icons.account_circle_outlined, color: AppColors.accent, size: 26),
+              tooltip: 'Update Profile',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OfficerProfileUpdateScreen()),
                 );
               },
             ),
@@ -111,13 +127,45 @@ class HomeScreen extends ConsumerWidget {
 
               // ── Quick Actions / Menu ──
               Text(
-                role == 'lawyer' ? 'Lawyer Workspace' : 'Quick Actions',
+                role == 'lawyer'
+                    ? 'Lawyer Workspace'
+                    : (role == 'police_officer' ? 'Police Workspace' : 'Quick Actions'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
 
-              // ── LAWYER MENU (Exclusively: View Cases, Set Availability, Submit an Ad) ──
-              if (role == 'lawyer') ...[
+              // ── POLICE DASHBOARD MENU (EXCLUSIVELY: View Cases, Add Time Slot) ──
+              if (role == 'police_officer') ...[
+                // Part 1: View Cases
+                _ActionCard(
+                  icon: Icons.folder_shared_rounded,
+                  title: 'View Cases',
+                  subtitle: 'Pending assignments, To-Do active investigations & completed cases',
+                  color: AppColors.accent,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const OfficerMyCasesScreen()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+
+                // Part 2: Add Time Slot (Duty shift manager)
+                _ActionCard(
+                  icon: Icons.more_time_rounded,
+                  title: 'Add Time Slot',
+                  subtitle: 'Duty shift manager — define on-duty hours & investigation availability',
+                  color: AppColors.info,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const OfficerManageAvailabilityScreen()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+              ] else if (role == 'lawyer') ...[
                 // View Cases
                 _ActionCard(
                   icon: Icons.folder_shared_rounded,
@@ -207,19 +255,8 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
               ],
 
-              // Dashboard — only for police officers and admins
-              if (role == 'police_officer' || role == 'admin') ...[
-                _ActionCard(
-                  icon: Icons.dashboard_outlined,
-                  title: 'Dashboard',
-                  subtitle: 'View case analytics and statistics',
-                  color: AppColors.warning,
-                  onTap: () => context.push(AppRoutes.dashboard),
-                ),
-              ],
-
-              // ── CITIZEN ADS ROW SLIDER (Sliding row at the bottom of Citizen Dashboard) ──
-              if (role != 'lawyer') ...[
+              // ── CITIZEN ADS ROW SLIDER (Only for citizens) ──
+              if (role != 'lawyer' && role != 'police_officer' && role != 'admin') ...[
                 const _CitizenAdsRowSlider(),
               ],
             ],

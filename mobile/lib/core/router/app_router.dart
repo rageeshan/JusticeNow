@@ -28,6 +28,11 @@ import '../../presentation/screens/admin/admin_case_list_screen.dart';
 import '../../presentation/screens/admin/admin_case_detail_screen.dart';
 import '../../presentation/screens/admin/admin_export_data_screen.dart';
 import '../../presentation/screens/notifications/notifications_screen.dart';
+import '../../presentation/screens/officer/officer_shell_screen.dart';
+import '../../presentation/screens/officer/officer_case_detail_screen.dart';
+import '../../presentation/screens/officer/officer_my_cases_screen.dart';
+import '../../presentation/screens/officer/officer_manage_availability_screen.dart';
+import '../../presentation/screens/officer/officer_profile_update_screen.dart';
 
 /// Named route constants
 class AppRoutes {
@@ -60,6 +65,11 @@ class AppRoutes {
   static const adminUserDetail = '/admin/verifications/:id';
   static const adminCases = '/admin/cases';
   static const adminCaseDetail = '/admin/cases/:id';
+  static const officerHome = '/officer';
+  static const officerCases = '/officer/cases';
+  static const officerAvailability = '/officer/availability';
+  static const officerProfileUpdate = '/officer/profile';
+  static const officerCaseDetail = '/officer/cases/:id';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -215,6 +225,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => AdminCaseDetailScreen(
           caseId: state.pathParameters['id']!,
           initialCase: state.extra as Map<String, dynamic>?,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.officerHome,
+        builder: (context, state) => const OfficerShellScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.officerCases,
+        builder: (context, state) => const OfficerMyCasesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.officerAvailability,
+        builder: (context, state) => const OfficerManageAvailabilityScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.officerProfileUpdate,
+        builder: (context, state) => const OfficerProfileUpdateScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.officerCaseDetail,
+        builder: (context, state) => OfficerCaseDetailScreen(
+          caseId: state.pathParameters['id']!,
         ),
       ),
     ],

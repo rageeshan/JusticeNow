@@ -99,4 +99,211 @@ class CaseRepository {
     });
     return response.data['data'] as Map<String, dynamic>;
   }
+
+  /// Track a case by reference number (e.g. JN-2026-00001)
+  Future<Map<String, dynamic>> trackByReferenceNumber(String refNum) async {
+    final response = await _dio.get('/cases/ref/$refNum');
+    return response.data['data']['case'] as Map<String, dynamic>;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  Officer-Specific Repository Methods
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Get cases assigned to the current officer
+  Future<Map<String, dynamic>> getAssignedCases({
+    int page = 1,
+    int limit = 20,
+    String? status,
+    String? category,
+    String? priority,
+    String? search,
+  }) async {
+    final response = await _dio.get('/cases/assigned', queryParameters: {
+      'page': page,
+      'limit': limit,
+      if (status != null && status.isNotEmpty && status != 'all') 'status': status,
+      if (category != null && category.isNotEmpty && category != 'all') 'category': category,
+      if (priority != null && priority.isNotEmpty && priority != 'all') 'priority': priority,
+      if (search != null && search.isNotEmpty) 'search': search,
+    });
+    return response.data['data'] as Map<String, dynamic>;
+  }
+
+  /// Get cases assigned to this police officer by tab (pending, in_progress, completed)
+  Future<List<dynamic>> getPoliceCases(String tab, {String? search}) async {
+    final response = await _dio.get('/cases/officer/cases', queryParameters: {
+      'tab': tab,
+      if (search != null && search.isNotEmpty) 'search': search,
+    });
+    return response.data['data']['cases'] as List<dynamic>;
+  }
+
+  /// Accept assigned police case and set investigation schedule
+  Future<Map<String, dynamic>> acceptPoliceCase(
+    String caseId, {
+    required String startDate,
+    required String startTime,
+  }) async {
+    final response = await _dio.patch(
+      '/cases/officer/cases/$caseId/accept',
+      data: {
+        'startDate': startDate,
+        'startTime': startTime,
+      },
+    );
+    return response.data['data']['case'] as Map<String, dynamic>;
+  }
+
+  /// Decline assigned police case with reason (returns to admin pool)
+  Future<Map<String, dynamic>> rejectPoliceCase(
+    String caseId, {
+    required String reason,
+  }) async {
+    final response = await _dio.patch(
+      '/cases/officer/cases/$caseId/reject',
+      data: {
+        'reason': reason,
+      },
+    );
+    return response.data['data']['case'] as Map<String, dynamic>;
+  }
+
+  /// Update police investigation stage (investigating, suspect_identified, referred_to_court, closed)
+  Future<Map<String, dynamic>> updatePoliceCaseStage(
+    String caseId, {
+    required String stage,
+    String? note,
+  }) async {
+    final response = await _dio.patch(
+      '/cases/officer/cases/$caseId/stage',
+      data: {
+        'stage': stage,
+        if (note != null) 'note': note,
+      },
+    );
+    return response.data['data']['case'] as Map<String, dynamic>;
+  }
+
+  /// Mark police case as completed
+  Future<Map<String, dynamic>> completePoliceCase(String caseId) async {
+    final response = await _dio.patch('/cases/officer/cases/$caseId/complete');
+    return response.data['data']['case'] as Map<String, dynamic>;
+  }
+
+  /// Get officer saved availability schedule
+  Future<Map<String, dynamic>> getPoliceAvailability() async {
+    final response = await _dio.get('/cases/officer/availability');
+    final avail = response.data['data']?['availability'];
+    if (avail is Map) {
+      return Map<String, dynamic>.from(avail);
+    }
+    return <String, dynamic>{};
+  }
+
+  /// Save officer availability schedule
+  Future<Map<String, dynamic>> updatePoliceAvailability(
+    Map<String, dynamic> availability,
+  ) async {
+    final response = await _dio.put(
+      '/cases/officer/availability',
+      data: {'availability': availability},
+    );
+    final avail = response.data['data']?['availability'];
+    if (avail is Map) {
+      return Map<String, dynamic>.from(avail);
+    }
+    return <String, dynamic>{};
+  }
+
+  /// Get officer dashboard summary statistics
+  Future<Map<String, dynamic>> getOfficerStats() async {
+    final response = await _dio.get('/cases/officer/stats');
+    return response.data['data'] as Map<String, dynamic>;
+  }
+
+  /// Add internal confidential investigation note to case
+  Future<Map<String, dynamic>> addInternalNote(String caseId, String note) async {
+    final response = await _dio.post(
+      '/cases/$caseId/notes',
+      data: {'note': note},
+    );
+    return response.data['data']['case'] as Map<String, dynamic>;
+  }
+
+  /// Assign case to an officer (or self-assign)
+  Future<Map<String, dynamic>> assignCase(String caseId, {String? officerId}) async {
+    final response = await _dio.patch(
+      '/cases/$caseId/assign',
+      data: {
+        if (officerId != null) 'officerId': officerId,
+      },
+    );
+    return response.data['data']['case'] as Map<String, dynamic>;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  Evidence Request Methods
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Request additional evidence from reporter
+  Future<Map<String, dynamic>> createEvidenceRequest(
+    String caseId, {
+    required String description,
+    String? reason,
+    String? instructions,
+    String? dueDate,
+    String? internalNote,
+  }) async {
+    final response = await _dio.post(
+      '/evidence-requests/case/$caseId',
+      data: {
+        'description': description,
+        if (reason != null && reason.isNotEmpty) 'reason': reason,
+        if (instructions != null && instructions.isNotEmpty) 'instructions': instructions,
+        if (dueDate != null) 'dueDate': dueDate,
+        if (internalNote != null && internalNote.isNotEmpty) 'internalNote': internalNote,
+      },
+    );
+    return response.data['data']['evidenceRequest'] as Map<String, dynamic>;
+  }
+
+  /// Get all evidence requests for a specific case
+  Future<List<dynamic>> getEvidenceRequestsByCase(String caseId) async {
+    final response = await _dio.get('/evidence-requests/case/$caseId');
+    return response.data['data']['evidenceRequests'] as List<dynamic>;
+  }
+
+  /// Get list of evidence requests for the officer
+  Future<Map<String, dynamic>> getOfficerEvidenceRequests({
+    String? status,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final response = await _dio.get(
+      '/evidence-requests',
+      queryParameters: {
+        if (status != null && status.isNotEmpty && status != 'all') 'status': status,
+        'page': page,
+        'limit': limit,
+      },
+    );
+    return response.data['data'] as Map<String, dynamic>;
+  }
+
+  /// Update the status of an evidence request
+  Future<Map<String, dynamic>> updateEvidenceRequestStatus(
+    String requestId, {
+    required String status,
+    String? reviewNotes,
+  }) async {
+    final response = await _dio.patch(
+      '/evidence-requests/$requestId/status',
+      data: {
+        'status': status,
+        if (reviewNotes != null) 'reviewNotes': reviewNotes,
+      },
+    );
+    return response.data['data']['evidenceRequest'] as Map<String, dynamic>;
+  }
 }

@@ -142,7 +142,7 @@ const getMe = async (req, res) => {
 const updateProfile = async (req, res, next) => {
   try {
     const User = require('../models/User.model');
-    const { fullName, phone, aboutMe, preferredLanguage, district, province, courtNumber } = req.body;
+    const { fullName, phone, aboutMe, preferredLanguage, district, province, courtNumber, policeId, availability } = req.body;
     const user = await User.findById(req.user._id);
     if (!user) {
       return sendError(res, 'User not found', 404);
@@ -156,6 +156,8 @@ const updateProfile = async (req, res, next) => {
     if (district !== undefined) user.profile.district = district;
     if (province !== undefined) user.profile.province = province;
     if (courtNumber !== undefined) user.profile.courtNumber = courtNumber;
+    if (policeId !== undefined) user.profile.policeId = policeId;
+    if (availability !== undefined) user.profile.availability = availability;
 
     await user.save();
     return sendSuccess(res, { user }, 'Profile updated successfully');

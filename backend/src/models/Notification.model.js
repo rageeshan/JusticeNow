@@ -32,6 +32,8 @@ const notificationSchema = new mongoose.Schema(
         'case_approved_scheduled',
         'lawyer_declined',
         'case_rejected',
+        'case_assigned_police',
+        'officer_declined',
         'general',
       ],
       default: 'general',

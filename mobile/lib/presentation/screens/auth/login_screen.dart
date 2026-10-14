@@ -35,6 +35,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final user = ref.read(authProvider).user;
       if (user?['role'] == 'admin') {
         context.go(AppRoutes.adminDashboard);
+      } else if (user?['role'] == 'police_officer') {
+        context.go(AppRoutes.officerHome);
       } else {
         context.go(AppRoutes.home);
       }

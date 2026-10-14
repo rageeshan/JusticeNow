@@ -1,4 +1,7 @@
 const caseService = require('../services/case.service');
+const Case = require('../models/Case.model');
+const User = require('../models/User.model');
+const Notification = require('../models/Notification.model');
 const Evidence = require('../models/Evidence.model');
 const AuditLog = require('../models/AuditLog.model');
 const crypto = require('crypto');
@@ -376,6 +379,349 @@ const assignToOfficer = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/cases/officer/cases
+ * Get cases assigned to this police officer by tab (pending, in_progress, completed)
+ */
+const getOfficerCases = async (req, res, next) => {
+  try {
+    const { tab = 'pending', search } = req.query;
+    const officerId = req.user._id;
+
+    let statusQuery;
+    if (tab === 'in_progress') {
+      statusQuery = {
+        $in: [
+          'in_progress',
+          'in_progress_police',
+          'investigating',
+          'suspect_identified',
+          'referred_to_court',
+        ],
+      };
+    } else if (tab === 'completed') {
+      statusQuery = { $in: ['completed', 'resolved', 'closed'] };
+    } else {
+      // Pending tab: assigned by admin, waiting for officer to accept
+      statusQuery = {
+        $in: ['assigned_to_police', 'submitted', 'under_review'],
+      };
+    }
+
+    const query = {
+      assignedOfficer: officerId,
+      status: statusQuery,
+      isDeleted: false,
+    };
+
+    if (search && search.trim().length > 0) {
+      const regex = new RegExp(search.trim(), 'i');
+      query.$or = [{ title: regex }, { description: regex }, { referenceNumber: regex }];
+    }
+
+    const cases = await Case.find(query)
+      .sort({ assignedToPoliceAt: -1, updatedAt: -1, createdAt: -1 })
+      .populate('reportedBy', 'profile email role alias')
+      .populate('evidence')
+      .lean();
+
+    return sendSuccess(res, { cases }, 'Officer cases retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/cases/officer/cases/:id/accept
+ * Officer accepts assigned case and selects investigation start date & time
+ */
+const acceptOfficerCase = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { startDate, startTime } = req.body;
+
+    if (!startDate || !startTime) {
+      return sendError(res, 'Investigation start date and time are required to accept the case', 400);
+    }
+
+    const caseDoc = await Case.findOne({ _id: id, isDeleted: false });
+    if (!caseDoc) {
+      return sendNotFound(res, 'Case not found');
+    }
+
+    if (caseDoc.assignedOfficer?.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return sendForbidden(res, 'You are not assigned to this case');
+    }
+
+    // Prevent double-booking for the officer on the exact date and time slot
+    const parsedDate = new Date(startDate);
+    const dayStart = new Date(parsedDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(parsedDate);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const conflictingCase = await Case.findOne({
+      assignedOfficer: req.user._id,
+      _id: { $ne: id },
+      status: { $in: ['in_progress_police', 'investigating', 'suspect_identified', 'referred_to_court'] },
+      investigationStartDate: { $gte: dayStart, $lte: dayEnd },
+      investigationStartTime: startTime,
+      isDeleted: false,
+    });
+
+    if (conflictingCase) {
+      return sendError(
+        res,
+        `You already have an active investigation scheduled for ${startDate} at ${startTime}. Please choose an open slot to prevent double-booking.`,
+        400
+      );
+    }
+
+    const previousStatus = caseDoc.status;
+    caseDoc.status = 'in_progress_police';
+    caseDoc.investigationStartDate = new Date(startDate);
+    caseDoc.investigationStartTime = startTime;
+    caseDoc.timeline.push({
+      status: 'in_progress_police',
+      note: `Officer accepted case. Investigation scheduled: ${startDate} at ${startTime}`,
+      updatedBy: req.user._id,
+    });
+
+    await caseDoc.save();
+
+    // Send notification to the citizen
+    if (caseDoc.reportedBy) {
+      const officerName = req.user.profile?.fullName || req.user.alias || 'Police Officer';
+      const officerDistrict = req.user.profile?.district || 'Assigned District';
+
+      await Notification.create({
+        recipient: caseDoc.reportedBy,
+        case: caseDoc._id,
+        title: 'Your case has been assigned to a police officer',
+        message: `Your case has been assigned to a police officer\nOfficer: ${officerName}\nDistrict: ${officerDistrict}\nStart Date: ${startDate} Time: ${startTime}\nYou may be contacted soon.`,
+        type: 'case_assigned_police',
+        actionRoute: '/my-cases',
+        actionText: 'View Case History',
+      });
+    }
+
+    await AuditLog.create({
+      action: 'case.officer_accepted',
+      performedBy: req.user._id,
+      targetResource: 'Case',
+      targetId: caseDoc._id,
+      metadata: { previousStatus, newStatus: caseDoc.status, startDate, startTime },
+    });
+
+    const updatedCase = await Case.findById(caseDoc._id)
+      .populate('reportedBy', 'profile email role alias')
+      .populate('evidence');
+
+    return sendSuccess(res, { case: updatedCase }, 'Case accepted successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/cases/officer/cases/:id/reject
+ * Officer declines assigned case with required reason, returning to admin pool
+ */
+const rejectOfficerCase = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return sendError(res, 'Decline reason is required', 400);
+    }
+
+    const caseDoc = await Case.findOne({ _id: id, isDeleted: false });
+    if (!caseDoc) {
+      return sendNotFound(res, 'Case not found');
+    }
+
+    if (caseDoc.assignedOfficer?.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return sendForbidden(res, 'You are not assigned to this case');
+    }
+
+    const officerName = req.user.profile?.fullName || req.user.email || 'Officer';
+    const previousStatus = caseDoc.status;
+    caseDoc.status = 'police_declined';
+    caseDoc.policeDeclineReason = reason.trim();
+    // Return to admin pool for reassignment
+    caseDoc.assignedOfficer = null;
+    caseDoc.timeline.push({
+      status: 'police_declined',
+      note: `Officer declined case. Reason: ${reason.trim()}`,
+      updatedBy: req.user._id,
+    });
+
+    await caseDoc.save();
+
+    // Send notification to Admin users
+    const admins = await User.find({ role: 'admin' });
+    for (const admin of admins) {
+      await Notification.create({
+        recipient: admin._id,
+        case: caseDoc._id,
+        title: `Officer ${officerName} declined case`,
+        message: `Officer ${officerName} declined case "${caseDoc.title}". Reason: ${reason.trim()}`,
+        type: 'officer_declined',
+        actionRoute: `/admin/cases/${caseDoc._id}`,
+        actionText: 'Reassign Case',
+      });
+    }
+
+    await AuditLog.create({
+      action: 'case.officer_declined',
+      performedBy: req.user._id,
+      targetResource: 'Case',
+      targetId: caseDoc._id,
+      metadata: { previousStatus, reason: reason.trim() },
+    });
+
+    return sendSuccess(res, { case: caseDoc }, 'Case declined and returned to admin for reassignment');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/cases/officer/cases/:id/stage
+ * Officer updates stage (investigating, suspect_identified, referred_to_court, closed)
+ */
+const updateOfficerCaseStage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { stage, note } = req.body;
+
+    const validStages = ['investigating', 'suspect_identified', 'referred_to_court', 'closed', 'completed'];
+    if (!validStages.includes(stage)) {
+      return sendError(res, `Invalid stage. Must be one of: ${validStages.join(', ')}`, 400);
+    }
+
+    const caseDoc = await Case.findOne({ _id: id, isDeleted: false });
+    if (!caseDoc) {
+      return sendNotFound(res, 'Case not found');
+    }
+
+    const previousStatus = caseDoc.status;
+    caseDoc.status = stage;
+    if (stage === 'completed' || stage === 'closed') {
+      caseDoc.completedAt = new Date();
+    }
+
+    const stageNote = note || `Investigation stage updated to: ${stage.replace(/_/g, ' ')}`;
+    caseDoc.timeline.push({
+      status: stage,
+      note: stageNote,
+      updatedBy: req.user._id,
+    });
+
+    await caseDoc.save();
+
+    if (caseDoc.reportedBy) {
+      await Notification.create({
+        recipient: caseDoc.reportedBy,
+        case: caseDoc._id,
+        title: 'Case Investigation Update',
+        message: `Your case "${caseDoc.title}" status has been updated: ${stage.replace(/_/g, ' ').toUpperCase()}`,
+        type: 'general',
+        actionRoute: '/my-cases',
+        actionText: 'View Case History',
+      });
+    }
+
+    return sendSuccess(res, { case: caseDoc }, 'Case stage updated');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/cases/officer/cases/:id/complete
+ * Mark case as completed by officer
+ */
+const completeOfficerCase = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const caseDoc = await Case.findOne({ _id: id, isDeleted: false });
+    if (!caseDoc) {
+      return sendNotFound(res, 'Case not found');
+    }
+
+    caseDoc.status = 'completed';
+    caseDoc.completedAt = new Date();
+    caseDoc.timeline.push({
+      status: 'completed',
+      note: 'Case marked as completed by officer',
+      updatedBy: req.user._id,
+    });
+    await caseDoc.save();
+
+    if (caseDoc.reportedBy) {
+      await Notification.create({
+        recipient: caseDoc.reportedBy,
+        case: caseDoc._id,
+        title: 'Case Completed',
+        message: `Your case "${caseDoc.title}" has been completed by the investigating officer.`,
+        type: 'general',
+        actionRoute: '/my-cases',
+        actionText: 'View Case History',
+      });
+    }
+
+    return sendSuccess(res, { case: caseDoc }, 'Case marked as completed');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/cases/officer/availability
+ * Get officer's saved weekly availability duty slots
+ */
+const getOfficerAvailability = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id).select('profile.availability');
+    const defaultAvailability = {
+      Monday: { isUnavailable: false, slots: [{ startTime: '08:00 AM', endTime: '12:00 PM' }, { startTime: '01:00 PM', endTime: '05:00 PM' }] },
+      Tuesday: { isUnavailable: false, slots: [{ startTime: '08:00 AM', endTime: '12:00 PM' }, { startTime: '01:00 PM', endTime: '05:00 PM' }] },
+      Wednesday: { isUnavailable: false, slots: [{ startTime: '08:00 AM', endTime: '12:00 PM' }, { startTime: '01:00 PM', endTime: '05:00 PM' }] },
+      Thursday: { isUnavailable: false, slots: [{ startTime: '08:00 AM', endTime: '12:00 PM' }, { startTime: '01:00 PM', endTime: '05:00 PM' }] },
+      Friday: { isUnavailable: false, slots: [{ startTime: '08:00 AM', endTime: '12:00 PM' }, { startTime: '01:00 PM', endTime: '05:00 PM' }] },
+      Saturday: { isUnavailable: true, slots: [] },
+      Sunday: { isUnavailable: true, slots: [] },
+    };
+    const availability = user?.profile?.availability || defaultAvailability;
+    return sendSuccess(res, { availability }, 'Officer availability retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PUT /api/cases/officer/availability
+ * Update officer weekly availability
+ */
+const updateOfficerAvailability = async (req, res, next) => {
+  try {
+    const { availability } = req.body;
+    if (!availability || typeof availability !== 'object') {
+      return sendError(res, 'Invalid availability format', 400);
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) return sendNotFound(res, 'User not found');
+    if (!user.profile) user.profile = {};
+    user.profile.availability = availability;
+    await user.save();
+    return sendSuccess(res, { availability: user.profile.availability }, 'Availability updated successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createCase,
   getCases,
@@ -389,5 +735,12 @@ module.exports = {
   getOfficerStats,
   addInternalNote,
   assignToOfficer,
+  getOfficerCases,
+  acceptOfficerCase,
+  rejectOfficerCase,
+  updateOfficerCaseStage,
+  completeOfficerCase,
+  getOfficerAvailability,
+  updateOfficerAvailability,
 };
 

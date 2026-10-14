@@ -17,6 +17,28 @@ router.get('/', authorize('police_officer', 'admin'), caseController.getCases);
 // GET  /api/cases/my         — Self-tracking for reporters
 router.get('/my', caseController.getMyCases);
 
+// ── Police Officer Workflow Routes ──
+// GET   /api/cases/officer/cases          — List assigned cases (pending, in_progress, completed)
+router.get('/officer/cases', authorize('police_officer', 'admin'), caseController.getOfficerCases);
+
+// PATCH /api/cases/officer/cases/:id/accept — Officer accepts case with scheduled date & time
+router.patch('/officer/cases/:id/accept', authorize('police_officer', 'admin'), caseController.acceptOfficerCase);
+
+// PATCH /api/cases/officer/cases/:id/reject — Officer declines case with reason (returns to admin)
+router.patch('/officer/cases/:id/reject', authorize('police_officer', 'admin'), caseController.rejectOfficerCase);
+
+// PATCH /api/cases/officer/cases/:id/stage  — Officer updates investigation stage
+router.patch('/officer/cases/:id/stage', authorize('police_officer', 'admin'), caseController.updateOfficerCaseStage);
+
+// PATCH /api/cases/officer/cases/:id/complete — Officer marks case as completed
+router.patch('/officer/cases/:id/complete', authorize('police_officer', 'admin'), caseController.completeOfficerCase);
+
+// GET   /api/cases/officer/availability   — Get officer availability
+router.get('/officer/availability', authorize('police_officer', 'admin'), caseController.getOfficerAvailability);
+
+// PUT   /api/cases/officer/availability   — Update officer availability
+router.put('/officer/availability', authorize('police_officer', 'admin'), caseController.updateOfficerAvailability);
+
 // GET  /api/cases/:id        — Owner or staff
 router.get('/:id', caseController.getCaseById);
 
