@@ -133,7 +133,7 @@ const getCases = async ({ page = 1, limit = 20, status, category, priority, sear
 const getCaseById = async (id) => {
   return Case.findOne({ _id: id, isDeleted: false })
     .populate('reportedBy', 'alias email role profile')
-    .populate('assignedOfficer', 'profile.fullName email')
+    .populate('assignedOfficer', 'profile.fullName profile.phone profile.district email')
     .populate('assignedOrganization', 'name type contact')
     .populate('evidence');
 };
@@ -212,7 +212,13 @@ const getCasesByReporter = async (userId, { page = 1, limit = 20 } = {}) => {
   const query = { reportedBy: userId, isDeleted: false };
   const skip = (page - 1) * limit;
   const [cases, total] = await Promise.all([
-    Case.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).select('-internalNotes').populate('evidence'),
+    Case.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select('-internalNotes')
+      .populate('assignedOfficer', 'profile.fullName profile.phone profile.district email')
+      .populate('evidence'),
     Case.countDocuments(query),
   ]);
   return { cases, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };

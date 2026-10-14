@@ -4,6 +4,7 @@ const User = require('../models/User.model');
 const Notification = require('../models/Notification.model');
 const Evidence = require('../models/Evidence.model');
 const AuditLog = require('../models/AuditLog.model');
+const mongoose = require('mongoose');
 const crypto = require('crypto');
 const fs = require('fs');
 const {
@@ -168,8 +169,15 @@ const getCaseById = async (req, res, next) => {
     // Strip internal officer notes for non-staff
     if (!isStaff) {
       delete data.internalNotes;
-      // Also strip officer contact details
-      delete data.assignedOfficer;
+      if (data.assignedOfficer && typeof data.assignedOfficer === 'object') {
+        data.assignedOfficer = {
+          _id: data.assignedOfficer._id,
+          name: data.assignedOfficer.profile?.fullName || data.assignedOfficer.email || 'Assigned Officer',
+          phone: data.assignedOfficer.profile?.phone || '',
+          email: data.assignedOfficer.email || '',
+          district: data.assignedOfficer.profile?.district || '',
+        };
+      }
     }
 
     return sendSuccess(res, { case: data }, 'Case retrieved');
@@ -481,9 +489,13 @@ const acceptOfficerCase = async (req, res, next) => {
     caseDoc.status = 'in_progress_police';
     caseDoc.investigationStartDate = new Date(startDate);
     caseDoc.investigationStartTime = startTime;
+    if (req.body.notes && req.body.notes.trim()) {
+      caseDoc.policeAcceptNotes = req.body.notes.trim();
+    }
+    const scheduleNote = `Officer accepted case. Investigation scheduled: ${startDate} at ${startTime}${req.body.notes ? '. Notes: ' + req.body.notes.trim() : ''}`;
     caseDoc.timeline.push({
       status: 'in_progress_police',
-      note: `Officer accepted case. Investigation scheduled: ${startDate} at ${startTime}`,
+      note: scheduleNote,
       updatedBy: req.user._id,
     });
 
@@ -493,16 +505,21 @@ const acceptOfficerCase = async (req, res, next) => {
     if (caseDoc.reportedBy) {
       const officerName = req.user.profile?.fullName || req.user.alias || 'Police Officer';
       const officerDistrict = req.user.profile?.district || 'Assigned District';
+      const officerContact = req.user.profile?.phone || req.user.email || '';
 
-      await Notification.create({
-        recipient: caseDoc.reportedBy,
-        case: caseDoc._id,
-        title: 'Your case has been assigned to a police officer',
-        message: `Your case has been assigned to a police officer\nOfficer: ${officerName}\nDistrict: ${officerDistrict}\nStart Date: ${startDate} Time: ${startTime}\nYou may be contacted soon.`,
-        type: 'case_assigned_police',
-        actionRoute: '/my-cases',
-        actionText: 'View Case History',
-      });
+      try {
+        await Notification.create({
+          recipient: caseDoc.reportedBy,
+          case: caseDoc._id,
+          title: 'Police officer assigned to your case',
+          message: `Officer: ${officerName}\nDistrict: ${officerDistrict}\nStart Date: ${startDate} Time: ${startTime}\nYou may be contacted soon.${officerContact ? '\nContact: ' + officerContact : ''}`,
+          type: 'case_assigned_police',
+          actionRoute: '/my-cases',
+          actionText: 'View in History',
+        });
+      } catch (notifErr) {
+        console.error('Failed to create officer acceptance notification:', notifErr);
+      }
     }
 
     await AuditLog.create({
@@ -530,13 +547,19 @@ const acceptOfficerCase = async (req, res, next) => {
 const rejectOfficerCase = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
+    const { reason, reasonType } = req.body;
 
-    if (!reason || !reason.trim()) {
+    const fullReason = (reasonType && reasonType !== 'Other' && !reason?.includes(reasonType))
+      ? `${reasonType}: ${reason || ''}`.trim()
+      : (reason || reasonType || '').trim();
+
+    if (!fullReason) {
       return sendError(res, 'Decline reason is required', 400);
     }
 
-    const caseDoc = await Case.findOne({ _id: id, isDeleted: false });
+    const caseDoc = await Case.findOne({ _id: id, isDeleted: false })
+      .populate('reportedBy', 'profile alias email');
+
     if (!caseDoc) {
       return sendNotFound(res, 'Case not found');
     }
@@ -545,32 +568,50 @@ const rejectOfficerCase = async (req, res, next) => {
       return sendForbidden(res, 'You are not assigned to this case');
     }
 
-    const officerName = req.user.profile?.fullName || req.user.email || 'Officer';
+    const officerName = req.user.profile?.fullName || req.user.alias || req.user.email || 'Officer';
     const previousStatus = caseDoc.status;
-    caseDoc.status = 'police_declined';
-    caseDoc.policeDeclineReason = reason.trim();
+    caseDoc.status = 'pending_reassignment';
+    caseDoc.policeDeclineReason = fullReason;
     // Return to admin pool for reassignment
     caseDoc.assignedOfficer = null;
     caseDoc.timeline.push({
-      status: 'police_declined',
-      note: `Officer declined case. Reason: ${reason.trim()}`,
+      status: 'pending_reassignment',
+      note: `Officer ${officerName} declined case. Reason: ${fullReason}`,
       updatedBy: req.user._id,
     });
 
     await caseDoc.save();
 
-    // Send notification to Admin users
-    const admins = await User.find({ role: 'admin' });
-    for (const admin of admins) {
-      await Notification.create({
-        recipient: admin._id,
-        case: caseDoc._id,
-        title: `Officer ${officerName} declined case`,
-        message: `Officer ${officerName} declined case "${caseDoc.title}". Reason: ${reason.trim()}`,
-        type: 'officer_declined',
-        actionRoute: `/admin/cases/${caseDoc._id}`,
-        actionText: 'Reassign Case',
-      });
+    try {
+      // 1. Send notification to Admin users:
+      const admins = await User.find({ role: 'admin' });
+      for (const admin of admins) {
+        await Notification.create({
+          recipient: admin._id,
+          case: caseDoc._id,
+          title: `Officer ${officerName} declined case`,
+          message: `Officer ${officerName} declined case "${caseDoc.title}". Reason: ${fullReason}`,
+          type: 'officer_declined',
+          actionRoute: `/admin/cases/${caseDoc._id}`,
+          actionText: 'Reassign Case',
+        });
+      }
+
+      // 2. Send notification to Citizen:
+      if (caseDoc.reportedBy?._id || caseDoc.reportedBy) {
+        const citizenId = caseDoc.reportedBy._id || caseDoc.reportedBy;
+        await Notification.create({
+          recipient: citizenId,
+          case: caseDoc._id,
+          title: 'Update on your case',
+          message: `Officer ${officerName} could not proceed.\nReason: ${fullReason}\nYour case will be reassigned.`,
+          type: 'case_declined_reassign',
+          actionRoute: '/my-cases',
+          actionText: 'View in History',
+        });
+      }
+    } catch (notifErr) {
+      console.error('Failed to create decline notifications:', notifErr);
     }
 
     await AuditLog.create({
@@ -578,7 +619,7 @@ const rejectOfficerCase = async (req, res, next) => {
       performedBy: req.user._id,
       targetResource: 'Case',
       targetId: caseDoc._id,
-      metadata: { previousStatus, reason: reason.trim() },
+      metadata: { previousStatus, reason: fullReason },
     });
 
     return sendSuccess(res, { case: caseDoc }, 'Case declined and returned to admin for reassignment');
@@ -722,6 +763,270 @@ const updateOfficerAvailability = async (req, res, next) => {
   }
 };
 
+/**
+ * Helper to format availability schedule into a human-readable summary
+ */
+function formatAvailabilitySummary(avail) {
+  if (!avail || typeof avail !== 'object') return 'Mon–Fri, 08:00 AM – 04:00 PM';
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const shortDays = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' };
+  const availableDays = [];
+  let commonSlot = null;
+
+  for (const day of days) {
+    const dayData = avail[day];
+    if (dayData && !dayData.isUnavailable && Array.isArray(dayData.slots) && dayData.slots.length > 0) {
+      availableDays.push(shortDays[day] || day);
+      if (!commonSlot) {
+        const s = dayData.slots[0];
+        if (s && s.startTime && s.endTime) {
+          commonSlot = `${s.startTime} – ${s.endTime}`;
+        }
+      }
+    }
+  }
+
+  if (availableDays.length === 0) return 'Unavailable';
+  if (availableDays.length === 5 && availableDays[0] === 'Mon' && availableDays[4] === 'Fri') {
+    return `Mon–Fri, ${commonSlot || '08:00 AM – 04:00 PM'}`;
+  }
+  if (availableDays.length === 7) {
+    return `Mon–Sun, ${commonSlot || '08:00 AM – 04:00 PM'}`;
+  }
+  return `${availableDays.join(', ')}${commonSlot ? ', ' + commonSlot : ''}`;
+}
+
+/**
+ * Helper to calculate age from Date of Birth
+ */
+function calculateAge(dob) {
+  if (!dob) return null;
+  const birthDate = new Date(dob);
+  const diff = Date.now() - birthDate.getTime();
+  const ageDate = new Date(diff);
+  return Math.abs(ageDate.getUTCFullYear() - 1970);
+}
+
+/**
+ * GET /api/cases/:id/officers-available
+ * Admin endpoint: List approved police officers auto-filtered by case location (Province & District)
+ * Supports sorting: fewest_cases (default), name, age, most_available
+ */
+const getAvailableOfficersForCase = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { sortBy = 'fewest_cases', province: overrideProvince, district: overrideDistrict } = req.query;
+
+    const caseDoc = await Case.findOne({
+      $or: [
+        ...(mongoose.isValidObjectId(id) ? [{ _id: id }] : []),
+        { referenceNumber: id },
+      ],
+      isDeleted: false,
+    }).populate('reportedBy', 'profile alias email');
+
+    if (!caseDoc) {
+      return sendNotFound(res, 'Case not found');
+    }
+
+    const citizenProfile = caseDoc.reportedBy?.profile || {};
+    const targetProvince = overrideProvince || citizenProfile.province || caseDoc.location?.state || null;
+    const targetDistrict = overrideDistrict || citizenProfile.district || caseDoc.location?.city || null;
+
+    const officers = await User.find({
+      role: 'police_officer',
+      approvalStatus: 'approved',
+    }).select('profile email alias role createdAt');
+
+    const enrichedOfficers = await Promise.all(
+      officers.map(async (officer) => {
+        const p = officer.profile || {};
+        const officerProvince = p.province || '';
+        const officerDistrict = p.district || '';
+
+        const provinceMatch = targetProvince
+          ? officerProvince.trim().toLowerCase() === targetProvince.trim().toLowerCase()
+          : true;
+        const districtMatch = targetDistrict
+          ? officerDistrict.trim().toLowerCase() === targetDistrict.trim().toLowerCase()
+          : true;
+        const isExactMatch = provinceMatch && districtMatch;
+
+        const pendingCasesCount = await Case.countDocuments({
+          assignedOfficer: officer._id,
+          status: { $in: ['assigned_to_police', 'in_progress_police', 'investigating', 'suspect_identified'] },
+          isDeleted: false,
+        });
+
+        let age = p.age || null;
+        if (!age && p.dob) {
+          age = calculateAge(p.dob);
+        }
+
+        const availabilitySummary = formatAvailabilitySummary(p.availability);
+        let openSlotsCount = 0;
+        if (p.availability && typeof p.availability === 'object') {
+          for (const k of Object.keys(p.availability)) {
+            const dayObj = p.availability[k];
+            if (dayObj && !dayObj.isUnavailable && Array.isArray(dayObj.slots)) {
+              openSlotsCount += dayObj.slots.length;
+            }
+          }
+        }
+
+        return {
+          _id: officer._id,
+          name: p.fullName || officer.alias || officer.email?.split('@')[0] || 'Police Officer',
+          email: officer.email,
+          phone: p.phone || 'N/A',
+          gender: p.gender || null,
+          age: age || 34,
+          aboutMe: p.aboutMe || 'Dedicated police officer committed to public service and community safety.',
+          policeId: p.policeId || 'PO-OFFICER',
+          province: officerProvince || 'Western',
+          district: officerDistrict || 'Colombo',
+          availability: availabilitySummary,
+          availabilityRaw: p.availability,
+          openSlotsCount,
+          pendingCasesCount,
+          isExactMatch,
+        };
+      })
+    );
+
+    let filtered = enrichedOfficers.filter((o) => o.isExactMatch);
+    if (filtered.length === 0 && targetProvince) {
+      filtered = enrichedOfficers.filter(
+        (o) => o.province.trim().toLowerCase() === targetProvince.trim().toLowerCase()
+      );
+    }
+    if (filtered.length === 0) {
+      filtered = enrichedOfficers;
+    }
+
+    if (sortBy === 'fewest_cases') {
+      filtered.sort((a, b) => a.pendingCasesCount - b.pendingCasesCount);
+    } else if (sortBy === 'name') {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === 'age') {
+      filtered.sort((a, b) => (a.age || 0) - (b.age || 0));
+    } else if (sortBy === 'most_available') {
+      filtered.sort((a, b) => b.openSlotsCount - a.openSlotsCount);
+    }
+
+    return sendSuccess(
+      res,
+      {
+        officers: filtered,
+        targetProvince,
+        targetDistrict,
+        totalOfficers: filtered.length,
+      },
+      'Available police officers retrieved'
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/cases/:id/assign-officer
+ * Admin assigns a case to a specific approved police officer
+ */
+const assignOfficerToCase = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { officerId } = req.body;
+
+    if (!officerId) {
+      return sendError(res, 'Police officer ID is required', 400);
+    }
+
+    const caseDoc = await Case.findOne({
+      $or: [
+        ...(mongoose.isValidObjectId(id) ? [{ _id: id }] : []),
+        { referenceNumber: id },
+      ],
+      isDeleted: false,
+    }).populate('reportedBy', 'profile alias email');
+
+    if (!caseDoc) {
+      return sendNotFound(res, 'Case not found');
+    }
+
+    const officer = await User.findOne({
+      _id: officerId,
+      role: 'police_officer',
+      approvalStatus: 'approved',
+    });
+
+    if (!officer) {
+      return sendNotFound(res, 'Approved police officer not found');
+    }
+
+    const officerName = officer.profile?.fullName || officer.alias || officer.email || 'Officer';
+    const citizenProfile = caseDoc.reportedBy?.profile || {};
+    const citizenName = citizenProfile.fullName || caseDoc.reportedBy?.alias || 'Citizen';
+    const citizenDistrict = citizenProfile.district || caseDoc.location?.city || 'District';
+
+    caseDoc.assignedOfficer = officer._id;
+    caseDoc.status = 'assigned_to_police';
+    caseDoc.assignedToPoliceAt = new Date();
+    caseDoc.timeline.push({
+      status: 'assigned_to_police',
+      note: `Assigned to police officer ${officerName} by Admin`,
+      updatedBy: req.user._id,
+    });
+
+    await caseDoc.save();
+
+    // 1. Notify Officer & 2. Notify Citizen
+    try {
+      await Notification.create({
+        recipient: officer._id,
+        case: caseDoc._id,
+        title: `New case assigned to you: ${caseDoc.title}`,
+        message: `From: ${citizenName} – ${citizenDistrict}`,
+        type: 'case_assigned_officer',
+        actionRoute: `/officer/cases/${caseDoc._id}`,
+        actionText: 'View Case',
+      });
+
+      if (caseDoc.reportedBy?._id || caseDoc.reportedBy) {
+        const citizenId = caseDoc.reportedBy._id || caseDoc.reportedBy;
+        await Notification.create({
+          recipient: citizenId,
+          case: caseDoc._id,
+          title: 'Your case is being reviewed by police',
+          message: `Case "${caseDoc.title}" has been forwarded to the police department.`,
+          type: 'case_forwarded_police',
+          actionRoute: '/my-cases',
+          actionText: 'View in History',
+        });
+      }
+    } catch (notifErr) {
+      console.error('Failed to create assignment notification:', notifErr);
+    }
+
+    await AuditLog.create({
+      action: 'case.assigned_to_police',
+      performedBy: req.user._id,
+      targetResource: 'Case',
+      targetId: caseDoc._id,
+      metadata: { officerId: officer._id, officerName },
+    });
+
+    const updatedCase = await Case.findById(caseDoc._id)
+      .populate('reportedBy', 'profile alias email')
+      .populate('assignedOfficer', 'profile email')
+      .populate('evidence');
+
+    return sendSuccess(res, { case: updatedCase }, `Case successfully assigned to Officer ${officerName}`);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createCase,
   getCases,
@@ -734,7 +1039,9 @@ module.exports = {
   getAssignedCases,
   getOfficerStats,
   addInternalNote,
-  assignToOfficer,
+  assignToOfficer: assignOfficerToCase,
+  assignOfficerToCase,
+  getAvailableOfficersForCase,
   getOfficerCases,
   acceptOfficerCase,
   rejectOfficerCase,

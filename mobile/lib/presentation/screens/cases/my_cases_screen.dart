@@ -88,6 +88,7 @@ class _CaseCard extends StatelessWidget {
       'approved_scheduled' => AppColors.info,
       'assigned_to_police' => AppColors.warning,
       'in_progress_police' => AppColors.info,
+      'pending_reassignment' => AppColors.statusRejected,
       'suspect_identified' => AppColors.accent,
       'referred_to_court' => AppColors.warning,
       'police_declined' => AppColors.statusRejected,
@@ -109,6 +110,8 @@ class _CaseCard extends StatelessWidget {
     final categoryLabel = AppConstants.caseCategories[category] ?? category ?? '';
     final scheduledDate = caseData['scheduledMeetingDate'] as String?;
     final scheduledTime = caseData['scheduledMeetingTime'] as String?;
+    final investigationDate = caseData['investigationStartDate'] as String?;
+    final investigationTime = caseData['investigationStartTime'] as String?;
 
     return GestureDetector(
       onTap: () => context.push('/cases/${caseData['_id']}'),
@@ -185,6 +188,88 @@ class _CaseCard extends StatelessWidget {
                       child: Text(
                         'Meeting: $scheduledDate ${scheduledTime != null ? '• $scheduledTime' : ''}',
                         style: const TextStyle(color: AppColors.info, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (investigationDate != null && investigationDate.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.indigo.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.local_police_rounded, size: 15, color: Colors.indigoAccent),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Police Investigation: $investigationDate ${investigationTime != null ? '• $investigationTime' : ''}',
+                            style: const TextStyle(color: Colors.indigoAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (caseData['assignedOfficer'] != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Officer: ${caseData['assignedOfficer'] is Map ? (caseData['assignedOfficer']['name'] ?? caseData['assignedOfficer']['profile']?['fullName'] ?? 'Assigned Officer') : 'Assigned Officer'}'
+                        '${caseData['assignedOfficer'] is Map && (caseData['assignedOfficer']['phone'] ?? caseData['assignedOfficer']['profile']?['phone']) != null ? ' • ${(caseData['assignedOfficer']['phone'] ?? caseData['assignedOfficer']['profile']?['phone'])}' : ''}',
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+            if (status == 'assigned_to_police') ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.hourglass_top_rounded, size: 14, color: Colors.purpleAccent),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Assigned to Police • Awaiting officer review',
+                        style: TextStyle(color: Colors.purpleAccent, fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (status == 'pending_reassignment') ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.sync_problem_rounded, size: 14, color: Colors.orangeAccent),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Pending Reassignment • Admin will reassign your case',
+                        style: TextStyle(color: Colors.orangeAccent, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],

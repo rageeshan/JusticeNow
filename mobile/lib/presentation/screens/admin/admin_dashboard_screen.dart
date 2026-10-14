@@ -175,11 +175,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 // ── 3. Big Button: Hotspot Map ──
                 _AdminBigCard(
                   title: 'Hotspot Map',
-                  subtitle: 'Interactive map and geospatial clustering analytics of reported human rights incidents',
+                  subtitle: 'Hotspot detection & risk visualization with incident clustering, heatmap overlay, and district metrics',
                   icon: Icons.map_rounded,
-                  badgeText: 'Geospatial Analytics',
+                  badgeText: 'Hotspot Detection',
                   accentColor: AppColors.warning,
-                  onTap: () => context.push(AppRoutes.dashboard),
+                  onTap: () => context.push(AppRoutes.adminHotspotMap),
                 ),
                 const SizedBox(height: 16),
 

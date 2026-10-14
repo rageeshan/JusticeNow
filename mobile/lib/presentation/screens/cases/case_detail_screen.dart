@@ -212,11 +212,142 @@ class _CaseDetailBody extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          // ── Police officer assignment card
+          if (c.rawStatus == 'in_progress_police' || c.rawStatus == 'assigned_to_police') ...[
+            const _SectionTitle('Assigned Police Department'),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.indigo.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.indigo.withValues(alpha: 0.4)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.local_police_rounded, size: 20, color: Colors.indigoAccent),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          c.rawStatus == 'in_progress_police'
+                              ? 'Investigation in Progress'
+                              : 'Case Forwarded to Police',
+                          style: const TextStyle(
+                            color: Colors.indigoAccent,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (c.assignedOfficerName != null) ...[
+                    _DetailRow(
+                      icon: Icons.person_pin_rounded,
+                      label: 'Investigating Officer',
+                      value: c.assignedOfficerName!,
+                    ),
+                    if (c.assignedOfficerDistrict != null && c.assignedOfficerDistrict!.isNotEmpty) ...[
+                      _Divider(),
+                      _DetailRow(
+                        icon: Icons.location_city_rounded,
+                        label: 'District',
+                        value: c.assignedOfficerDistrict!,
+                      ),
+                    ],
+                    if (c.investigationStartDate != null) ...[
+                      _Divider(),
+                      _DetailRow(
+                        icon: Icons.event_available_rounded,
+                        label: 'Start Date & Time',
+                        value: '${c.investigationStartDate!} • ${c.investigationStartTime ?? "Duty Hours"}',
+                        valueColor: Colors.indigoAccent,
+                      ),
+                    ],
+                    if (c.assignedOfficerPhone != null && c.assignedOfficerPhone!.isNotEmpty) ...[
+                      _Divider(),
+                      _DetailRow(
+                        icon: Icons.phone_outlined,
+                        label: 'Officer Contact',
+                        value: c.assignedOfficerPhone!,
+                      ),
+                    ],
+                    if (c.assignedOfficerEmail != null && c.assignedOfficerEmail!.isNotEmpty) ...[
+                      _Divider(),
+                      _DetailRow(
+                        icon: Icons.email_outlined,
+                        label: 'Officer Email',
+                        value: c.assignedOfficerEmail!,
+                      ),
+                    ],
+                    if (c.policeAcceptNotes != null && c.policeAcceptNotes!.isNotEmpty) ...[
+                      _Divider(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Officer Notes',
+                              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              c.policeAcceptNotes!,
+                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontStyle: FontStyle.italic),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ] else ...[
+                    const Text(
+                      'Your case has been forwarded to the local police department. An assigned officer is reviewing your report details.',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          if (c.rawStatus == 'pending_reassignment') ...[
+            const _SectionTitle('Case Reassignment'),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.sync_problem_rounded, size: 20, color: Colors.orangeAccent),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'The previously assigned officer could not proceed with this case. It has been queued for immediate reassignment by our administrators.',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
 
           // ── Next step card
           if (c.nextStep != null) ...[
-            _SectionTitle('Expected Next Step'),
+            const _SectionTitle('Expected Next Step'),
             const SizedBox(height: 10),
             Container(
               width: double.infinity,
@@ -230,12 +361,12 @@ class _CaseDetailBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  const Row(
                     children: [
-                      const Icon(Icons.navigate_next_rounded,
+                      Icon(Icons.navigate_next_rounded,
                           size: 18, color: AppColors.accent),
-                      const SizedBox(width: 8),
-                      const Text('What to expect next',
+                      SizedBox(width: 8),
+                      Text('What to expect next',
                           style: TextStyle(
                               color: AppColors.accent,
                               fontSize: 13,
@@ -275,7 +406,7 @@ class _CaseDetailBody extends StatelessWidget {
           ],
 
           // ── Investigation timeline
-          _SectionTitle('Investigation Timeline'),
+          const _SectionTitle('Investigation Timeline'),
           const SizedBox(height: 12),
           _SectionCard(
             child: CaseTimelineWidget(events: c.timeline),
@@ -284,7 +415,7 @@ class _CaseDetailBody extends StatelessWidget {
 
           // ── Investigator remarks
           if (c.remarks.isNotEmpty) ...[
-            _SectionTitle('Updates from Our Team'),
+            const _SectionTitle('Updates from Our Team'),
             const SizedBox(height: 4),
             const Text(
               'Messages from the case team. Officer identities are kept confidential for their safety.',

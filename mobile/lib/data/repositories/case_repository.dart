@@ -242,6 +242,41 @@ class CaseRepository {
     return response.data['data']['case'] as Map<String, dynamic>;
   }
 
+  /// Get available police officers auto-filtered by case location for admin assignment
+  Future<Map<String, dynamic>> getAvailableOfficersForCase(
+    String caseId, {
+    String? sortBy,
+    String? province,
+    String? district,
+  }) async {
+    final response = await _dio.get(
+      '/cases/$caseId/officers-available',
+      queryParameters: {
+        if (sortBy != null) 'sortBy': sortBy,
+        if (province != null) 'province': province,
+        if (district != null) 'district': district,
+      },
+    );
+    final data = response.data['data'];
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+    return <String, dynamic>{};
+  }
+
+  /// Admin assigns case to chosen police officer
+  Future<Map<String, dynamic>> assignOfficerToCase(String caseId, String officerId) async {
+    final response = await _dio.patch(
+      '/cases/$caseId/assign-officer',
+      data: {'officerId': officerId},
+    );
+    final data = response.data['data'];
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+    return <String, dynamic>{};
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   //  Evidence Request Methods
   // ─────────────────────────────────────────────────────────────────────────

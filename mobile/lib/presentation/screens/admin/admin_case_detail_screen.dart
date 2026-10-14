@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/case_repository.dart';
+import 'admin_officer_selection_screen.dart';
 
 class AdminCaseDetailScreen extends StatefulWidget {
   final String caseId;
@@ -131,12 +132,20 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
 
   Color _statusColor(String? status) {
     switch (status) {
+      case 'assigned_to_police':
+        return AppColors.info;
+      case 'in_progress_police':
+        return AppColors.warning;
+      case 'pending_reassignment':
+      case 'police_declined':
+        return AppColors.error;
       case 'awaiting_lawyer_selection':
         return AppColors.accent;
       case 'rejected':
         return AppColors.error;
       case 'resolved':
       case 'closed':
+      case 'completed':
         return AppColors.success;
       case 'investigating':
       case 'under_review':
@@ -149,6 +158,10 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
 
   String _statusLabel(String? status) {
     if (status == null) return 'Submitted';
+    if (status == 'assigned_to_police') return 'Assigned to Police Officer';
+    if (status == 'in_progress_police') return 'In Progress – Police';
+    if (status == 'pending_reassignment') return 'Pending Reassignment';
+    if (status == 'police_declined') return 'Police Declined';
     if (status == 'awaiting_lawyer_selection') return 'Awaiting Lawyer Selection';
     return status.replaceAll('_', ' ').toUpperCase();
   }
@@ -220,38 +233,22 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
     }
   }
 
-  // ── Action 2: Assign to Police Officer (Keep null) ──
-  void _assignToPoliceOfficer() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.local_police_rounded, color: AppColors.textMuted, size: 24),
-            SizedBox(width: 10),
-            Text('Police Assignment', style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
-          ],
+  // ── Action 2: Assign to Police Officer (Full Flow) ──
+  Future<void> _assignToPoliceOfficer() async {
+    if (_case == null) return;
+    final assigned = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdminOfficerSelectionScreen(
+          caseId: widget.caseId,
+          caseData: _case!,
         ),
-        content: const Text(
-          'Police officer assignment is currently set to null. No police officers are assigned to this case.',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryDark,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            child: const Text('OK'),
-          ),
-        ],
       ),
     );
+
+    if (assigned == true && mounted) {
+      _loadCaseDetails();
+    }
   }
 
   // ── Action 3: Reject Case ──
@@ -988,19 +985,21 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
                     ),
                     const SizedBox(height: 8),
 
-                    // Assign to Police Officer (Kept null)
+                    // Assign to Police Officer
                     SizedBox(
                       width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _assignToPoliceOfficer,
-                        icon: const Icon(Icons.local_police_rounded, size: 16, color: AppColors.textMuted),
+                      child: ElevatedButton.icon(
+                        onPressed: _isProcessingAction ? null : _assignToPoliceOfficer,
+                        icon: const Icon(Icons.local_police_rounded, size: 18),
                         label: const Text(
-                          'Assign to Police Officer (Null / Not Applicable)',
-                          style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                          'Assign to Police Officer',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                         ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.border),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryDark,
+                          foregroundColor: AppColors.accent,
+                          side: const BorderSide(color: AppColors.accent, width: 1.2),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
