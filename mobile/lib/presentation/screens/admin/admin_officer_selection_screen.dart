@@ -138,7 +138,7 @@ class _AdminOfficerSelectionScreenState
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primaryDark,
+                color: AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.divider),
               ),
@@ -199,8 +199,8 @@ class _AdminOfficerSelectionScreenState
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: AppColors.primaryDark,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -250,7 +250,7 @@ class _AdminOfficerSelectionScreenState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Assign to Police Officer'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
       ),
       body: SafeArea(
@@ -262,7 +262,14 @@ class _AdminOfficerSelectionScreenState
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: AppColors.surface,
-                border: Border(bottom: BorderSide(color: AppColors.divider)),
+                border: Border(bottom: BorderSide(color: AppColors.border)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,14 +277,15 @@ class _AdminOfficerSelectionScreenState
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.accent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
+                          color: AppColors.surfaceBlue,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.borderBlue),
                         ),
-                        child: const Icon(Icons.location_on_rounded, color: AppColors.accent, size: 18),
+                        child: const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 18),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,33 +300,35 @@ class _AdminOfficerSelectionScreenState
                                 fontSize: 14,
                               ),
                             ),
-                            if (refNum.isNotEmpty)
+                            if (refNum.isNotEmpty) ...[
+                              const SizedBox(height: 2),
                               Text(
                                 refNum,
-                                style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                               ),
+                            ],
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   // Jurisdiction pill
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.divider),
+                      color: AppColors.surfaceBlue,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.borderBlue),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.verified_user_rounded, color: AppColors.success, size: 14),
-                        const SizedBox(width: 6),
+                        const Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 15),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Auto-filtered: Showing approved officers in $_targetDistrict, $_targetProvince',
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                            style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w500),
                           ),
                         ),
                       ],
@@ -330,8 +340,8 @@ class _AdminOfficerSelectionScreenState
 
             // ── Search & Sort Control Bar ──
             Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              color: AppColors.surfaceVariant.withValues(alpha: 0.3),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              color: AppColors.surfaceSubtle,
               child: Column(
                 children: [
                   // Search Bar
@@ -343,16 +353,16 @@ class _AdminOfficerSelectionScreenState
                       hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                       prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 20),
                       filled: true,
-                      fillColor: AppColors.primaryDark,
+                      fillColor: AppColors.surface,
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.divider),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.divider),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                     ),
                   ),
@@ -360,7 +370,7 @@ class _AdminOfficerSelectionScreenState
                   // Sort By Selector
                   Row(
                     children: [
-                      const Icon(Icons.sort_rounded, size: 16, color: AppColors.accent),
+                      const Icon(Icons.sort_rounded, size: 16, color: AppColors.primary),
                       const SizedBox(width: 6),
                       const Text(
                         'Sort by:',
@@ -369,17 +379,17 @@ class _AdminOfficerSelectionScreenState
                       const SizedBox(width: 8),
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryDark,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.divider),
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.border),
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _sortBy,
                               isExpanded: true,
-                              dropdownColor: AppColors.primaryDark,
+                              dropdownColor: AppColors.surface,
                               style: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
                               items: const [
                                 DropdownMenuItem(
@@ -472,8 +482,9 @@ class _AdminOfficerSelectionScreenState
                             return Container(
                               decoration: BoxDecoration(
                                 color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: AppColors.divider),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.border),
+                                boxShadow: const [AppColors.cardShadow],
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
@@ -484,10 +495,15 @@ class _AdminOfficerSelectionScreenState
                                     Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        CircleAvatar(
-                                          radius: 22,
-                                          backgroundColor: AppColors.accent.withValues(alpha: 0.15),
-                                          child: const Icon(Icons.local_police_rounded, color: AppColors.accent, size: 24),
+                                        Container(
+                                          width: 44,
+                                          height: 44,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.surfaceBlue,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: AppColors.borderBlue),
+                                          ),
+                                          child: const Icon(Icons.local_police_rounded, color: AppColors.primary, size: 22),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
@@ -512,8 +528,9 @@ class _AdminOfficerSelectionScreenState
                                                   Container(
                                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                     decoration: BoxDecoration(
-                                                      color: AppColors.surfaceVariant,
+                                                      color: AppColors.surfaceSubtle,
                                                       borderRadius: BorderRadius.circular(4),
+                                                      border: Border.all(color: AppColors.border),
                                                     ),
                                                     child: Text(
                                                       age,
@@ -532,20 +549,20 @@ class _AdminOfficerSelectionScreenState
                                         ),
                                         // Pending Cases Badge
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: pendingCases == 0
-                                                ? AppColors.success.withValues(alpha: 0.15)
+                                                ? AppColors.surfaceGreen
                                                 : pendingCases <= 2
-                                                    ? AppColors.warning.withValues(alpha: 0.15)
-                                                    : AppColors.error.withValues(alpha: 0.15),
+                                                    ? AppColors.surfaceAmber
+                                                    : AppColors.surfaceRed,
                                             borderRadius: BorderRadius.circular(8),
                                             border: Border.all(
                                               color: pendingCases == 0
-                                                  ? AppColors.success.withValues(alpha: 0.3)
+                                                  ? AppColors.borderGreen
                                                   : pendingCases <= 2
-                                                      ? AppColors.warning.withValues(alpha: 0.3)
-                                                      : AppColors.error.withValues(alpha: 0.3),
+                                                      ? AppColors.borderAmber
+                                                      : const Color(0xFFFECACA),
                                             ),
                                           ),
                                           child: Column(
@@ -556,7 +573,7 @@ class _AdminOfficerSelectionScreenState
                                                   color: pendingCases == 0
                                                       ? AppColors.success
                                                       : pendingCases <= 2
-                                                          ? AppColors.warning
+                                                          ? const Color(0xFFB45309)
                                                           : AppColors.error,
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 14,
@@ -568,7 +585,7 @@ class _AdminOfficerSelectionScreenState
                                                   color: pendingCases == 0
                                                       ? AppColors.success
                                                       : pendingCases <= 2
-                                                          ? AppColors.warning
+                                                          ? const Color(0xFFB45309)
                                                           : AppColors.error,
                                                   fontSize: 9,
                                                   fontWeight: FontWeight.bold,
@@ -582,21 +599,30 @@ class _AdminOfficerSelectionScreenState
 
                                     // Row 2: About Me Preview
                                     if (aboutMe.isNotEmpty) ...[
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        aboutMe,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 12,
-                                          fontStyle: FontStyle.italic,
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.surfaceSubtle,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: AppColors.border),
+                                        ),
+                                        child: Text(
+                                          aboutMe,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 12,
+                                            fontStyle: FontStyle.italic,
+                                          ),
                                         ),
                                       ),
                                     ],
 
                                     const SizedBox(height: 12),
-                                    const Divider(color: AppColors.divider, height: 1),
+                                    const Divider(color: AppColors.border, height: 1),
                                     const SizedBox(height: 12),
 
                                     // Row 3: Availability & Assign Button
@@ -605,7 +631,7 @@ class _AdminOfficerSelectionScreenState
                                         Expanded(
                                           child: Row(
                                             children: [
-                                              const Icon(Icons.schedule_rounded, size: 14, color: AppColors.accent),
+                                              const Icon(Icons.schedule_rounded, size: 14, color: AppColors.primary),
                                               const SizedBox(width: 6),
                                               Expanded(
                                                 child: Text(
@@ -626,11 +652,11 @@ class _AdminOfficerSelectionScreenState
                                         ElevatedButton.icon(
                                           onPressed: _isAssigning ? null : () => _confirmAndAssign(officer),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.accent,
-                                            foregroundColor: AppColors.primaryDark,
+                                            backgroundColor: AppColors.primary,
+                                            foregroundColor: Colors.white,
                                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius: BorderRadius.circular(10),
                                             ),
                                           ),
                                           icon: const Icon(Icons.assignment_ind_rounded, size: 16),

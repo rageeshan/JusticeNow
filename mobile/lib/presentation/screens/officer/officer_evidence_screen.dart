@@ -206,7 +206,7 @@ class _OfficerEvidenceScreenState extends ConsumerState<OfficerEvidenceScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         title: const Text(
           'Evidence Vault',
@@ -217,9 +217,9 @@ class _OfficerEvidenceScreenState extends ConsumerState<OfficerEvidenceScreen>
         ),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.accent,
+          indicatorColor: AppColors.primary,
           indicatorWeight: 3,
-          labelColor: AppColors.accent,
+          labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textSecondary,
           labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
           tabs: [
@@ -236,8 +236,8 @@ class _OfficerEvidenceScreenState extends ConsumerState<OfficerEvidenceScreen>
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showNewRequestDialog(context, cases),
-        backgroundColor: AppColors.accent,
-        foregroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add_photo_alternate_rounded),
         label: const Text('Request Evidence', style: TextStyle(fontWeight: FontWeight.w700)),
       ),
@@ -545,7 +545,7 @@ class _OfficerEvidenceScreenState extends ConsumerState<OfficerEvidenceScreen>
               height: 140,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppColors.primaryDark,
+                color: AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.divider),
               ),

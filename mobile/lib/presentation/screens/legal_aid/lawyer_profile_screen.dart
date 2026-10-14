@@ -205,7 +205,7 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Lawyer Profile'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
       ),
       body: SafeArea(
@@ -228,11 +228,11 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
                                 height: 84,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.accent.withValues(alpha: 0.15),
-                                  border: Border.all(color: AppColors.accent, width: 2),
+                                  color: AppColors.surfaceBlue,
+                                  border: Border.all(color: AppColors.borderBlue, width: 2),
                                 ),
                                 child: const Center(
-                                  child: Icon(Icons.person_rounded, size: 48, color: AppColors.accent),
+                                  child: Icon(Icons.person_rounded, size: 48, color: AppColors.primary),
                                 ),
                               ),
                               Positioned(
@@ -259,13 +259,13 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.15),
+                              color: AppColors.surfaceGreen,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+                              border: Border.all(color: AppColors.borderGreen),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
@@ -274,7 +274,7 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
                                 SizedBox(width: 4),
                                 Text(
                                   'Supreme Court Verified Counsel',
-                                  style: TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w600),
+                                  style: TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -329,9 +329,9 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceVariant,
+                              color: AppColors.surfaceGreen,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(color: AppColors.borderGreen),
                             ),
                             child: Row(
                               children: [
@@ -343,7 +343,7 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
                                     children: [
                                       Text(
                                         'Supreme Court Certificate',
-                                        style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
+                                        style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
                                       ),
                                       Text(
                                         'Verified credential on record',
@@ -356,13 +356,14 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
                                   ElevatedButton(
                                     onPressed: () => _previewCertificate(certUrl),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primaryDark,
-                                      foregroundColor: AppColors.accent,
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: Colors.white,
                                       minimumSize: Size.zero,
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     ),
-                                    child: const Text('View Cert', style: TextStyle(fontSize: 12)),
+                                    child: const Text('View Cert', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                                   )
                                 else
                                   const Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 20),
@@ -426,8 +427,8 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
                     child: ElevatedButton(
                       onPressed: _proceedToBooking,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: AppColors.primaryDark,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -453,13 +454,20 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
   Widget _buildSectionHeader(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.accent, size: 20),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceBlue,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 16),
+        ),
         const SizedBox(width: 8),
         Text(
           title,
           style: const TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: FontWeight.bold,
           ),
         ),

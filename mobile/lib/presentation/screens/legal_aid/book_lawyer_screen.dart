@@ -280,7 +280,7 @@ class _BookLawyerScreenState extends ConsumerState<BookLawyerScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Book Lawyer'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
       ),
       body: SafeArea(
@@ -296,22 +296,29 @@ class _BookLawyerScreenState extends ConsumerState<BookLawyerScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.1),
+                        color: AppColors.surfaceBlue,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                        border: Border.all(color: AppColors.borderBlue),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppColors.shadow,
+                            blurRadius: 10,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
                           Container(
-                            width: 50,
-                            height: 50,
+                            width: 48,
+                            height: 48,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColors.accent.withValues(alpha: 0.2),
-                              border: Border.all(color: AppColors.accent),
+                              color: AppColors.surfaceBlueMuted,
+                              border: Border.all(color: AppColors.borderBlue),
                             ),
                             child: const Center(
-                              child: Icon(Icons.gavel_rounded, color: AppColors.accent, size: 24),
+                              child: Icon(Icons.gavel_rounded, color: AppColors.primary, size: 22),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -320,8 +327,8 @@ class _BookLawyerScreenState extends ConsumerState<BookLawyerScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'Booking Legal Representation with:',
-                                  style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                                  'Legal Representation with:',
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
@@ -332,9 +339,10 @@ class _BookLawyerScreenState extends ConsumerState<BookLawyerScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                                const SizedBox(height: 2),
                                 Text(
                                   'SC Reg: $courtNumber',
-                                  style: const TextStyle(color: AppColors.accent, fontSize: 12),
+                                  style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -351,8 +359,11 @@ class _BookLawyerScreenState extends ConsumerState<BookLawyerScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.border),
+                        boxShadow: const [
+                          BoxShadow(color: AppColors.shadow, blurRadius: 8, offset: Offset(0, 2)),
+                        ],
                       ),
                       child: Row(
                         children: [
@@ -376,15 +387,32 @@ class _BookLawyerScreenState extends ConsumerState<BookLawyerScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.border),
+                        boxShadow: const [
+                          BoxShadow(color: AppColors.shadow, blurRadius: 8, offset: Offset(0, 2)),
+                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildReportField('Report Title', title, isBold: true),
                           const SizedBox(height: 12),
-                          _buildReportField('Report Description', description),
+                          const Text('Report Description', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                          const SizedBox(height: 4),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceSubtle,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Text(
+                              description,
+                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, height: 1.5),
+                            ),
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             children: [
@@ -528,7 +556,7 @@ class _BookLawyerScreenState extends ConsumerState<BookLawyerScreen> {
                                   },
                                   selectedColor: AppColors.accent,
                                   labelStyle: TextStyle(
-                                    color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+                                    color: isSelected ? Colors.white : AppColors.textSecondary,
                                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                     fontSize: 13,
                                   ),
@@ -579,8 +607,8 @@ class _BookLawyerScreenState extends ConsumerState<BookLawyerScreen> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitBooking,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: AppColors.primaryDark,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -588,7 +616,7 @@ class _BookLawyerScreenState extends ConsumerState<BookLawyerScreen> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryDark),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
                       : const Text(
                           'OK / Submit Booking',
@@ -606,7 +634,14 @@ class _BookLawyerScreenState extends ConsumerState<BookLawyerScreen> {
   Widget _buildSectionTitle(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.accent, size: 18),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceBlue,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 16),
+        ),
         const SizedBox(width: 8),
         Text(
           title,

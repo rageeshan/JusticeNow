@@ -208,7 +208,7 @@ class _LegalAidScreenState extends ConsumerState<LegalAidScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Find a Lawyer'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -541,6 +541,13 @@ class _LegalAidScreenState extends ConsumerState<LegalAidScreen> {
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,11 +563,11 @@ class _LegalAidScreenState extends ConsumerState<LegalAidScreen> {
                         height: 52,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.accent.withValues(alpha: 0.15),
-                          border: Border.all(color: AppColors.accent.withValues(alpha: 0.5)),
+                          color: AppColors.surfaceBlue,
+                          border: Border.all(color: AppColors.borderBlue, width: 1.5),
                         ),
                         child: const Center(
-                          child: Icon(Icons.person_rounded, color: AppColors.accent, size: 28),
+                          child: Icon(Icons.person_rounded, color: AppColors.primary, size: 28),
                         ),
                       ),
                       Positioned(
@@ -569,7 +576,7 @@ class _LegalAidScreenState extends ConsumerState<LegalAidScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(2),
                           decoration: const BoxDecoration(
-                            color: AppColors.background,
+                            color: AppColors.surface,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.verified_rounded, color: AppColors.success, size: 16),
@@ -597,7 +604,7 @@ class _LegalAidScreenState extends ConsumerState<LegalAidScreen> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.location_on_outlined, color: AppColors.accent, size: 14),
+                            const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 14),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -609,8 +616,10 @@ class _LegalAidScreenState extends ConsumerState<LegalAidScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
-                        Row(
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -623,23 +632,29 @@ class _LegalAidScreenState extends ConsumerState<LegalAidScreen> {
                                 style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w600),
                               ),
                             ),
-                            const SizedBox(width: 6),
                             if (courtNumber != null && courtNumber.isNotEmpty)
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.accent.withValues(alpha: 0.1),
+                                  color: AppColors.surfaceBlueMuted,
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   'SC: $courtNumber',
-                                  style: const TextStyle(color: AppColors.accent, fontSize: 11, fontWeight: FontWeight.w600),
+                                  style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700),
                                 ),
                               ),
-                            const SizedBox(width: 6),
-                            Text(
-                              language,
-                              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceSubtle,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Text(
+                                language,
+                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500),
+                              ),
                             ),
                           ],
                         ),
@@ -665,19 +680,21 @@ class _LegalAidScreenState extends ConsumerState<LegalAidScreen> {
                   ElevatedButton(
                     onPressed: () => _navigateToProfile(lawyerId, lawyer),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                      foregroundColor: AppColors.primaryDark,
+                      backgroundColor: AppColors.surfaceBlue,
+                      foregroundColor: AppColors.primary,
+                      elevation: 0,
+                      side: const BorderSide(color: AppColors.borderBlue),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('View Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text('View Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                         SizedBox(width: 4),
-                        Icon(Icons.arrow_forward_ios_rounded, size: 12),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 11),
                       ],
                     ),
                   ),

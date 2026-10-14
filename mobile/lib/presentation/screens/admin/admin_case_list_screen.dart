@@ -134,7 +134,7 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Case Reports'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -148,7 +148,10 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
         children: [
           // ── Top Bar: Search & Filter Tabs ──
           Container(
-            color: AppColors.primaryDark,
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              border: Border(bottom: BorderSide(color: AppColors.divider)),
+            ),
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +190,7 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                           label: Text(
                             filter,
                             style: TextStyle(
-                              color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+                              color: isSelected ? Colors.white : AppColors.textSecondary,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                               fontSize: 12,
                             ),
@@ -279,6 +282,13 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                                     color: AppColors.surface,
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(color: AppColors.border),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: AppColors.shadow,
+                                        blurRadius: 10,
+                                        offset: Offset(0, 3),
+                                      ),
+                                    ],
                                   ),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
@@ -289,13 +299,21 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text(
-                                              refNumber,
-                                              style: const TextStyle(
-                                                color: AppColors.textMuted,
-                                                fontSize: 12,
-                                                fontFamily: 'monospace',
-                                                fontWeight: FontWeight.bold,
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.surfaceBlue,
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: AppColors.borderBlue),
+                                              ),
+                                              child: Text(
+                                                refNumber,
+                                                style: const TextStyle(
+                                                  color: AppColors.primary,
+                                                  fontSize: 11,
+                                                  fontFamily: 'monospace',
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                             Container(
@@ -316,16 +334,23 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 10),
+                                        const SizedBox(height: 12),
 
                                         // ── 1. Citizen's Name ──
                                         Row(
                                           children: [
-                                            const Icon(Icons.person_outline_rounded, color: AppColors.accent, size: 16),
+                                            Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: const BoxDecoration(
+                                                color: AppColors.surfaceBlue,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 14),
+                                            ),
                                             const SizedBox(width: 8),
                                             const Text(
                                               "Citizen: ",
-                                              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                                              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                                             ),
                                             Expanded(
                                               child: Text(
@@ -346,17 +371,16 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                                         // ── 2. Citizen's NIC ──
                                         Row(
                                           children: [
-                                            const Icon(Icons.badge_outlined, color: AppColors.info, size: 16),
-                                            const SizedBox(width: 8),
+                                            const SizedBox(width: 26),
                                             const Text(
                                               "NIC: ",
-                                              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                                              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                                             ),
                                             Text(
                                               citizenNIC,
                                               style: const TextStyle(
-                                                color: AppColors.textPrimary,
-                                                fontSize: 13,
+                                                color: AppColors.textSecondary,
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
@@ -367,11 +391,10 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                                         // ── 3. Date submitted ──
                                         Row(
                                           children: [
-                                            const Icon(Icons.calendar_today_rounded, color: AppColors.textMuted, size: 15),
-                                            const SizedBox(width: 8),
+                                            const SizedBox(width: 26),
                                             const Text(
                                               "Submitted: ",
-                                              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                                              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                                             ),
                                             Text(
                                               _formatDate(createdAt),
@@ -389,8 +412,9 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                                           width: double.infinity,
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                           decoration: BoxDecoration(
-                                            color: AppColors.surfaceVariant,
+                                            color: AppColors.surfaceSubtle,
                                             borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: AppColors.border),
                                           ),
                                           child: Text(
                                             title,
@@ -422,14 +446,13 @@ class _AdminCaseListScreenState extends State<AdminCaseListScreen> {
                                             icon: const Icon(Icons.visibility_rounded, size: 16),
                                             label: const Text('View Case Details'),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: AppColors.primaryDark,
-                                              foregroundColor: AppColors.accent,
+                                              backgroundColor: AppColors.accentLight,
+                                              foregroundColor: AppColors.primary,
                                               minimumSize: Size.zero,
                                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                               padding: const EdgeInsets.symmetric(vertical: 10),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius: BorderRadius.circular(10),
-                                                side: const BorderSide(color: AppColors.accent),
                                               ),
                                             ),
                                           ),

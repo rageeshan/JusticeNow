@@ -335,7 +335,12 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
                         lastDate: DateTime.now(),
                         builder: (ctx, child) => Theme(
                           data: Theme.of(ctx).copyWith(
-                            colorScheme: const ColorScheme.dark(primary: AppColors.accent),
+                            colorScheme: const ColorScheme.light(
+                              primary: AppColors.primary,
+                              onPrimary: Colors.white,
+                              surface: AppColors.surface,
+                              onSurface: AppColors.textPrimary,
+                            ),
                           ),
                           child: child!,
                         ),
@@ -447,23 +452,23 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 24),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.surfaceSubtle,
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: AppColors.textMuted.withValues(alpha: 0.2)),
+                            color: AppColors.border, width: 1.2),
                       ),
                       child: const Column(
                         children: [
                           Icon(Icons.cloud_upload_outlined,
-                              size: 36, color: AppColors.textMuted),
-                          SizedBox(height: 8),
-                          Text('No files selected',
+                              size: 40, color: AppColors.primary),
+                          SizedBox(height: 10),
+                          Text('No evidence files attached yet',
                               style: TextStyle(
-                                  color: AppColors.textMuted, fontSize: 13)),
-                          SizedBox(height: 2),
-                          Text('Tap a button above to add evidence',
+                                  color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
+                          SizedBox(height: 4),
+                          Text('Tap Camera, Gallery, or Files above to attach',
                               style: TextStyle(
-                                  color: AppColors.textMuted, fontSize: 11)),
+                                  color: AppColors.textSecondary, fontSize: 12)),
                         ],
                       ),
                     )
@@ -578,7 +583,7 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: AppColors.primaryDark),
+                                  strokeWidth: 2, color: Colors.white),
                             )
                           : Text(_currentStep == 3 ? 'Submit Report' : 'Continue'),
                     ),
@@ -625,21 +630,21 @@ class _EvidencePickButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
+            color: AppColors.surfaceBlue,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+            border: Border.all(color: AppColors.borderBlue),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: AppColors.accent, size: 24),
-              const SizedBox(height: 4),
+              Icon(icon, color: AppColors.primary, size: 24),
+              const SizedBox(height: 6),
               Text(
                 label,
                 style: const TextStyle(
-                  color: AppColors.textSecondary,
+                  color: AppColors.primary,
                   fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

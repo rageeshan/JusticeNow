@@ -318,7 +318,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
@@ -383,7 +383,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
@@ -391,7 +391,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                           child: DropdownButton<String>(
                             value: selectedTimeSlot,
                             isExpanded: true,
-                            dropdownColor: AppColors.primaryDark,
+                            dropdownColor: AppColors.surface,
                             items: availableSlots.map((slot) {
                               return DropdownMenuItem(
                                 value: slot,
@@ -426,7 +426,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                         hintText: 'e.g. Will visit location on Monday morning...',
                         hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                         filled: true,
-                        fillColor: AppColors.primaryDark,
+                        fillColor: AppColors.surfaceVariant,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
                         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
                         contentPadding: const EdgeInsets.all(10),
@@ -555,7 +555,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
+                      color: AppColors.surfaceVariant,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.divider),
                     ),
@@ -563,7 +563,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                       child: DropdownButton<String>(
                         value: selectedReasonType,
                         isExpanded: true,
-                        dropdownColor: AppColors.primaryDark,
+                        dropdownColor: AppColors.surface,
                         style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                         items: const [
                           DropdownMenuItem(value: 'Not enough evidence', child: Text('Not enough evidence')),
@@ -596,7 +596,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                           : 'Additional comments or details...',
                       hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                       filled: true,
-                      fillColor: AppColors.primaryDark,
+                      fillColor: AppColors.surfaceVariant,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
                       contentPadding: const EdgeInsets.all(10),
@@ -720,7 +720,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                 )
               : null,
           filled: true,
-          fillColor: AppColors.primaryDark,
+          fillColor: AppColors.surface,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -749,7 +749,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('View Cases'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -760,8 +760,8 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.accent,
-          labelColor: AppColors.accent,
+          indicatorColor: AppColors.primary,
+          labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textMuted,
           indicatorWeight: 3,
           tabs: [
@@ -999,14 +999,15 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                       if (updated == true) _fetchAllCases();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
+                      backgroundColor: AppColors.accentLight,
+                      foregroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     child: const Text(
                       'View Details',
                       style: TextStyle(
-                        color: AppColors.primaryDark,
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -1217,7 +1218,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDark,
+                    color: AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.divider),
                   ),
@@ -1263,7 +1264,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
@@ -1273,7 +1274,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                                 ? currentStatus
                                 : 'investigating',
                             isExpanded: true,
-                            dropdownColor: AppColors.primaryDark,
+                            dropdownColor: AppColors.surface,
                             style: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
                             items: const [
                               DropdownMenuItem(value: 'investigating', child: Text('Investigating')),

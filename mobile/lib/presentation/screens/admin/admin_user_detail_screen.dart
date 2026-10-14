@@ -328,7 +328,7 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Verification Detail'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
       ),
       body: SafeArea(
@@ -347,18 +347,24 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.border),
+                        boxShadow: const [AppColors.cardShadow],
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundColor: isLawyer
-                                ? AppColors.accent.withValues(alpha: 0.15)
-                                : AppColors.info.withValues(alpha: 0.15),
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: isLawyer ? AppColors.surfacePurple : AppColors.surfaceBlue,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isLawyer ? AppColors.surfacePurple : AppColors.borderBlue,
+                              ),
+                            ),
                             child: Icon(
                               isLawyer ? Icons.gavel_rounded : Icons.local_police_rounded,
-                              color: isLawyer ? AppColors.accent : AppColors.info,
-                              size: 32,
+                              color: isLawyer ? const Color(0xFF7C3AED) : AppColors.primary,
+                              size: 28,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -384,18 +390,26 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppColors.warning.withValues(alpha: 0.15),
+                                    color: AppColors.surfaceAmber,
                                     borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: AppColors.borderAmber),
                                   ),
-                                  child: const Text(
-                                    'Pending Admin Review',
-                                    style: TextStyle(
-                                      color: AppColors.warning,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.hourglass_top_rounded, color: AppColors.warning, size: 12),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Pending Admin Review',
+                                        style: TextStyle(
+                                          color: Color(0xFFB45309),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -407,7 +421,12 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
                     const SizedBox(height: 24),
 
                     // ── Common Details ──
-                    _SectionHeader(title: 'COMMON DETAILS'),
+                    const _SectionHeader(
+                      title: 'COMMON DETAILS',
+                      icon: Icons.person_outline_rounded,
+                      iconColor: AppColors.primary,
+                      iconBg: AppColors.surfaceBlue,
+                    ),
                     const SizedBox(height: 12),
                     _DetailCard(
                       items: [
@@ -425,7 +444,12 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
 
                     // ── Role Specific Details ──
                     if (isLawyer) ...[
-                      _SectionHeader(title: 'LAWYER CREDENTIALS'),
+                      const _SectionHeader(
+                        title: 'LAWYER CREDENTIALS',
+                        icon: Icons.badge_outlined,
+                        iconColor: Color(0xFF7C3AED),
+                        iconBg: AppColors.surfacePurple,
+                      ),
                       const SizedBox(height: 12),
                       _DetailCard(
                         items: [
@@ -434,24 +458,29 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
                           _DetailItem('About Me', (aboutMe != null && aboutMe.isNotEmpty) ? aboutMe : 'None provided'),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
                       // Certificate Photo / PDF Section
-                      _SectionHeader(title: 'SUPREME COURT CERTIFICATE'),
+                      const _SectionHeader(
+                        title: 'SUPREME COURT CERTIFICATE',
+                        icon: Icons.verified_user_outlined,
+                        iconColor: AppColors.success,
+                        iconBg: AppColors.surfaceGreen,
+                      ),
                       const SizedBox(height: 12),
                       if (certificateUrl == null || certificateUrl.isEmpty)
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
+                            color: AppColors.surfaceAmber,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.borderAmber),
                           ),
                           child: const Row(
                             children: [
                               Icon(Icons.warning_amber_rounded, color: AppColors.warning),
                               SizedBox(width: 10),
-                              Text('No certificate file uploaded', style: TextStyle(color: AppColors.textSecondary)),
+                              Text('No certificate file uploaded', style: TextStyle(color: Color(0xFF92400E))),
                             ],
                           ),
                         )
@@ -459,13 +488,22 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
+                            color: AppColors.surfaceBlue,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.borderBlue),
+                            boxShadow: const [AppColors.cardShadow],
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.picture_as_pdf_rounded, color: AppColors.error, size: 36),
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceRed,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.error, size: 24),
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -488,6 +526,7 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
                               color: AppColors.surface,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(color: AppColors.border),
+                              boxShadow: const [AppColors.cardShadow],
                             ),
                             clipBehavior: Clip.antiAlias,
                             child: Column(
@@ -513,7 +552,7 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
                                       margin: const EdgeInsets.all(10),
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: Colors.black87,
+                                        color: Colors.black.withValues(alpha: 0.75),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: const Row(
@@ -536,7 +575,12 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
                     ],
 
                     if (!isLawyer) ...[
-                      _SectionHeader(title: 'POLICE CREDENTIALS'),
+                      const _SectionHeader(
+                        title: 'POLICE CREDENTIALS',
+                        icon: Icons.local_police_outlined,
+                        iconColor: AppColors.primary,
+                        iconBg: AppColors.surfaceBlue,
+                      ),
                       const SizedBox(height: 12),
                       _DetailCard(
                         items: [
@@ -555,9 +599,16 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
             // ── Bottom Action Buttons: Approve | Reject ──
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.surface,
-                border: const Border(top: BorderSide(color: AppColors.border)),
+                border: Border(top: BorderSide(color: AppColors.border)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    blurRadius: 8,
+                    offset: Offset(0, -3),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -565,10 +616,11 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _isProcessingAction ? null : _rejectUser,
                       icon: const Icon(Icons.cancel_outlined, color: AppColors.error),
-                      label: const Text('Reject', style: TextStyle(color: AppColors.error)),
+                      label: const Text('Reject', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: AppColors.error),
                         padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ),
@@ -577,11 +629,12 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _isProcessingAction ? null : _approveUser,
                       icon: const Icon(Icons.check_circle_rounded),
-                      label: const Text('Approve'),
+                      label: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.success,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ),
@@ -597,18 +650,41 @@ class _AdminUserDetailScreenState extends ConsumerState<AdminUserDetailScreen> {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionHeader({required this.title});
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+
+  const _SectionHeader({
+    required this.title,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: AppColors.accent,
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 1.1,
-      ),
+    return Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: iconBg,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: iconColor, size: 16),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.8,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -624,6 +700,7 @@ class _DetailCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
+        boxShadow: const [AppColors.cardShadow],
       ),
       child: ListView.separated(
         shrinkWrap: true,
@@ -642,7 +719,7 @@ class _DetailCard extends StatelessWidget {
                   child: Text(
                     item.label,
                     style: const TextStyle(
-                      color: AppColors.textMuted,
+                      color: AppColors.textSecondary,
                       fontSize: 13,
                     ),
                   ),
@@ -653,7 +730,7 @@ class _DetailCard extends StatelessWidget {
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

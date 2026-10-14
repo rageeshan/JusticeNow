@@ -91,28 +91,47 @@ class _CaseDetailBody extends StatelessWidget {
                     Expanded(
                       child: Text(
                         c.title,
-                        style: Theme.of(context).textTheme.headlineMedium,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     StatusBadge(status: c.status, large: true),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  c.categoryLabel,
-                  style: const TextStyle(
-                      color: AppColors.accent,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceBlue,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.borderBlue),
+                  ),
+                  child: Text(
+                    c.categoryLabel,
+                    style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  c.summary,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14,
-                    height: 1.65,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceSubtle,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Text(
+                    c.summary,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 13,
+                      height: 1.6,
+                    ),
                   ),
                 ),
               ],
@@ -220,16 +239,26 @@ class _CaseDetailBody extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.indigo.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.indigo.withValues(alpha: 0.4)),
+                color: AppColors.surfaceBlue,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderBlue),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.shadow, blurRadius: 8, offset: Offset(0, 2)),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.local_police_rounded, size: 20, color: Colors.indigoAccent),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceBlueMuted,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.local_police_rounded, size: 20, color: AppColors.primary),
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -237,7 +266,7 @@ class _CaseDetailBody extends StatelessWidget {
                               ? 'Investigation in Progress'
                               : 'Case Forwarded to Police',
                           style: const TextStyle(
-                            color: Colors.indigoAccent,
+                            color: AppColors.primary,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
@@ -353,22 +382,31 @@ class _CaseDetailBody extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: AppColors.accent.withValues(alpha: 0.4)),
+                color: AppColors.surfaceBlue,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderBlue),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.shadow, blurRadius: 8, offset: Offset(0, 2)),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.navigate_next_rounded,
-                          size: 18, color: AppColors.accent),
-                      SizedBox(width: 8),
-                      Text('What to expect next',
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceBlueMuted,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.navigate_next_rounded,
+                            size: 18, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('What to expect next',
                           style: TextStyle(
-                              color: AppColors.accent,
+                              color: AppColors.primary,
                               fontSize: 13,
                               fontWeight: FontWeight.w700)),
                     ],
@@ -517,35 +555,26 @@ class _CaseDetailBody extends StatelessWidget {
   }
 
   Color _statusBgColor(CaseStatus s) => switch (s) {
-        CaseStatus.submitted =>
-          AppColors.statusSubmitted.withValues(alpha: 0.08),
-        CaseStatus.underReview =>
-          AppColors.statusUnderReview.withValues(alpha: 0.08),
-        CaseStatus.investigating =>
-          AppColors.statusInvestigating.withValues(alpha: 0.08),
-        CaseStatus.resolved =>
-          AppColors.statusResolved.withValues(alpha: 0.08),
-        CaseStatus.closed =>
-          AppColors.statusClosed.withValues(alpha: 0.08),
+        CaseStatus.submitted => AppColors.surfaceVariant,
+        CaseStatus.underReview => AppColors.surfaceBlue,
+        CaseStatus.investigating => AppColors.surfaceAmber,
+        CaseStatus.resolved => AppColors.surfaceGreen,
+        CaseStatus.closed => AppColors.surfaceVariant,
       };
 
   Color _statusBorderColor(CaseStatus s) => switch (s) {
-        CaseStatus.submitted =>
-          AppColors.statusSubmitted.withValues(alpha: 0.3),
-        CaseStatus.underReview =>
-          AppColors.statusUnderReview.withValues(alpha: 0.3),
-        CaseStatus.investigating =>
-          AppColors.statusInvestigating.withValues(alpha: 0.3),
-        CaseStatus.resolved =>
-          AppColors.statusResolved.withValues(alpha: 0.3),
-        CaseStatus.closed => AppColors.statusClosed.withValues(alpha: 0.3),
+        CaseStatus.submitted => AppColors.border,
+        CaseStatus.underReview => AppColors.borderBlue,
+        CaseStatus.investigating => AppColors.borderAmber,
+        CaseStatus.resolved => AppColors.borderGreen,
+        CaseStatus.closed => AppColors.border,
       };
 
   Color _statusIconColor(CaseStatus s) => switch (s) {
         CaseStatus.submitted => AppColors.statusSubmitted,
-        CaseStatus.underReview => AppColors.statusUnderReview,
-        CaseStatus.investigating => AppColors.statusInvestigating,
-        CaseStatus.resolved => AppColors.statusResolved,
+        CaseStatus.underReview => AppColors.primary,
+        CaseStatus.investigating => AppColors.warning,
+        CaseStatus.resolved => AppColors.success,
         CaseStatus.closed => AppColors.statusClosed,
       };
 
@@ -568,11 +597,18 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
       child: child,
     );
@@ -611,14 +647,21 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.textMuted),
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: AppColors.primary),
+          ),
           const SizedBox(width: 12),
           Text(label,
               style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 13)),
+                  color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500)),
           const Spacer(),
           Text(
             value,

@@ -50,7 +50,7 @@ class _OfficerShellScreenState extends ConsumerState<OfficerShellScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Police Dashboard'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(

@@ -100,7 +100,7 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
-              foregroundColor: AppColors.primaryDark,
+              foregroundColor: Colors.white,
             ),
             child: const Text('Mark Completed'),
           ),
@@ -149,7 +149,7 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('View Cases'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -160,9 +160,9 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.accent,
-          labelColor: AppColors.accent,
-          unselectedLabelColor: AppColors.textMuted,
+          indicatorColor: AppColors.primary,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textSecondary,
           indicatorWeight: 3,
           tabs: [
             Tab(
@@ -258,8 +258,15 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.border),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,10 +275,16 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppColors.accent.withValues(alpha: 0.15),
-                      child: const Icon(Icons.person_outline_rounded, color: AppColors.accent, size: 20),
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceBlue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -298,14 +311,14 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.15),
+                        color: AppColors.surfaceAmber,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                        border: Border.all(color: AppColors.borderAmber),
                       ),
                       child: const Text(
                         'New Request',
                         style: TextStyle(
-                          color: AppColors.accent,
+                          color: AppColors.warning,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -354,8 +367,8 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                     icon: const Icon(Icons.visibility_outlined, size: 16),
                     label: const Text('View Details'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                      foregroundColor: AppColors.primaryDark,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
@@ -398,8 +411,15 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,10 +428,16 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppColors.info.withValues(alpha: 0.15),
-                      child: const Icon(Icons.person_outline_rounded, color: AppColors.info, size: 20),
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceBlue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -429,13 +455,13 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              const Icon(Icons.event_available_rounded, size: 14, color: AppColors.info),
+                              const Icon(Icons.event_available_rounded, size: 14, color: AppColors.primary),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   scheduledText,
                                   style: const TextStyle(
-                                    color: AppColors.info,
+                                    color: AppColors.primary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -450,14 +476,14 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.info.withValues(alpha: 0.15),
+                        color: AppColors.surfaceBlue,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.info.withValues(alpha: 0.4)),
+                        border: Border.all(color: AppColors.borderBlue),
                       ),
                       child: const Text(
                         'In Progress',
                         style: TextStyle(
-                          color: AppColors.info,
+                          color: AppColors.primary,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -526,7 +552,7 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
+                    color: AppColors.surfaceSubtle,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -611,7 +637,7 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                         label: const Text('Complete', style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.success,
-                          foregroundColor: AppColors.primaryDark,
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 11),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
@@ -654,8 +680,15 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.border),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -664,10 +697,16 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppColors.success.withValues(alpha: 0.15),
-                      child: const Icon(Icons.check_rounded, color: AppColors.success, size: 20),
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceGreen,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.check_rounded, color: AppColors.success, size: 20),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -694,9 +733,9 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.15),
+                        color: AppColors.surfaceGreen,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+                        border: Border.all(color: AppColors.borderGreen),
                       ),
                       child: const Text(
                         'Completed',
@@ -794,8 +833,8 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                         icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
                         label: const Text('Export PDF'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: AppColors.primaryDark,
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),

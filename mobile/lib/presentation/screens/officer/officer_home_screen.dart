@@ -34,19 +34,19 @@ class OfficerHomeScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.15),
+                color: AppColors.accentLight,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.security_rounded,
-                color: AppColors.accent,
+                color: AppColors.primary,
                 size: 20,
               ),
             ),
@@ -66,8 +66,8 @@ class OfficerHomeScreen extends ConsumerWidget {
                   'Case Officer Console',
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.accentLight.withValues(alpha: 0.9),
-                    fontWeight: FontWeight.w500,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -113,13 +113,16 @@ class OfficerHomeScreen extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1E3557), Color(0xFF112239)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [

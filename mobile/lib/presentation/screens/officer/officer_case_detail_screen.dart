@@ -214,7 +214,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
@@ -279,7 +279,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
@@ -287,7 +287,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                           child: DropdownButton<String>(
                             value: selectedTimeSlot,
                             isExpanded: true,
-                            dropdownColor: AppColors.primaryDark,
+                            dropdownColor: AppColors.surface,
                             items: availableSlots.map((slot) {
                               return DropdownMenuItem(
                                 value: slot,
@@ -322,7 +322,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                         hintText: 'e.g. Will visit location on Monday morning...',
                         hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                         filled: true,
-                        fillColor: AppColors.primaryDark,
+                        fillColor: AppColors.surfaceVariant,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
                         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
                         contentPadding: const EdgeInsets.all(10),
@@ -452,7 +452,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
+                      color: AppColors.surfaceVariant,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.divider),
                     ),
@@ -460,7 +460,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                       child: DropdownButton<String>(
                         value: selectedReasonType,
                         isExpanded: true,
-                        dropdownColor: AppColors.primaryDark,
+                        dropdownColor: AppColors.surface,
                         style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                         items: const [
                           DropdownMenuItem(value: 'Not enough evidence', child: Text('Not enough evidence')),
@@ -493,7 +493,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                           : 'Additional comments or details...',
                       hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                       filled: true,
-                      fillColor: AppColors.primaryDark,
+                      fillColor: AppColors.surfaceVariant,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
                       contentPadding: const EdgeInsets.all(10),
@@ -695,7 +695,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(c['referenceNumber']?.toString() ?? 'Police Case Detail'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -712,25 +712,31 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Case Status Header Card
+              // Case Status Header Card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.divider),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: const [AppColors.cardShadow],
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: isPending
-                            ? AppColors.warning.withValues(alpha: 0.15)
-                            : (isInProgress
-                                ? AppColors.info.withValues(alpha: 0.15)
-                                : AppColors.success.withValues(alpha: 0.15)),
+                            ? AppColors.surfaceAmber
+                            : (isInProgress ? AppColors.surfaceBlue : AppColors.surfaceGreen),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isPending
+                              ? AppColors.borderAmber
+                              : (isInProgress ? AppColors.borderBlue : AppColors.borderGreen),
+                        ),
                       ),
                       child: Icon(
                         isPending
@@ -740,11 +746,11 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                                 : Icons.check_circle_outline_rounded),
                         color: isPending
                             ? AppColors.warning
-                            : (isInProgress ? AppColors.info : AppColors.success),
+                            : (isInProgress ? AppColors.primary : AppColors.success),
                         size: 22,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -757,13 +763,13 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                                     : 'Investigation Completed'),
                             style: TextStyle(
                               color: isPending
-                                  ? AppColors.warning
-                                  : (isInProgress ? AppColors.info : AppColors.success),
+                                  ? const Color(0xFFB45309)
+                                  : (isInProgress ? AppColors.primary : AppColors.success),
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
                             'Ref: ${c['referenceNumber'] ?? 'N/A'}',
                             style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
@@ -774,20 +780,26 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
 
               // ─────────────────────────────────────────────────────────────
               // Section 1 – Citizen Details
               // ─────────────────────────────────────────────────────────────
-              _buildSectionHeader(Icons.person_rounded, 'Section 1 – Citizen Details'),
+              _buildSectionHeader(
+                Icons.person_rounded,
+                'Section 1 – Citizen Details',
+                iconColor: AppColors.primary,
+                iconBg: AppColors.surfaceBlue,
+              ),
               const SizedBox(height: 10),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.divider),
+                  color: AppColors.surfaceBlue,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.borderBlue),
+                  boxShadow: const [AppColors.cardShadow],
                 ),
                 child: Column(
                   children: [
@@ -801,20 +813,26 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
 
               // ─────────────────────────────────────────────────────────────
               // Section 2 – Report Details
               // ─────────────────────────────────────────────────────────────
-              _buildSectionHeader(Icons.article_rounded, 'Section 2 – Report Details'),
+              _buildSectionHeader(
+                Icons.article_rounded,
+                'Section 2 – Report Details',
+                iconColor: AppColors.accent,
+                iconBg: AppColors.surfaceBlue,
+              ),
               const SizedBox(height: 10),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.divider),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: const [AppColors.cardShadow],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -823,7 +841,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                     _buildDetailRow('Category', category),
                     _buildDetailRow('Incident Date', incidentDate),
                     _buildDetailRow('Incident Location', incidentLocation),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     const Text(
                       'Description',
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
@@ -831,10 +849,11 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                     const SizedBox(height: 6),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryDark,
-                        borderRadius: BorderRadius.circular(10),
+                        color: AppColors.surfaceSubtle,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Text(
                         description,
@@ -844,12 +863,17 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
 
               // ─────────────────────────────────────────────────────────────
               // Section 3 – Evidence
               // ─────────────────────────────────────────────────────────────
-              _buildSectionHeader(Icons.perm_media_rounded, 'Section 3 – Evidence (${evidenceList.length})'),
+              _buildSectionHeader(
+                Icons.perm_media_rounded,
+                'Section 3 – Evidence (${evidenceList.length})',
+                iconColor: const Color(0xFF7C3AED),
+                iconBg: AppColors.surfacePurple,
+              ),
               const SizedBox(height: 10),
               if (evidenceList.isEmpty)
                 Container(
@@ -857,8 +881,9 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.divider),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: const [AppColors.cardShadow],
                   ),
                   child: const Column(
                     children: [
@@ -874,34 +899,48 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
 
               // In Progress extra options: Stages & Schedule
               if (isInProgress) ...[
-                const SizedBox(height: 20),
-                _buildSectionHeader(Icons.timeline_rounded, 'Investigation Stages & Status'),
+                const SizedBox(height: 22),
+                _buildSectionHeader(
+                  Icons.timeline_rounded,
+                  'Investigation Stages & Status',
+                  iconColor: AppColors.primary,
+                  iconBg: AppColors.surfaceBlue,
+                ),
                 const SizedBox(height: 10),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.divider),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: const [AppColors.cardShadow],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (c['investigationStartDate'] != null) ...[
-                        Row(
-                          children: [
-                            const Icon(Icons.alarm_on_rounded, color: AppColors.accent, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Scheduled Start: ${_formatDate(c['investigationStartDate'])} • ${c['investigationStartTime'] ?? 'On Duty'}',
-                                style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 13),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceBlue,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderBlue),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.alarm_on_rounded, color: AppColors.primary, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Scheduled Start: ${_formatDate(c['investigationStartDate'])} • ${c['investigationStartTime'] ?? 'On Duty'}',
+                                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        const Divider(color: AppColors.divider, height: 24),
+                        const SizedBox(height: 14),
                       ],
                       const Text(
                         'Update Investigation Stage',
@@ -943,7 +982,14 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
         padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
           color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.divider)),
+          border: Border(top: BorderSide(color: AppColors.border)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: Offset(0, -3),
+            ),
+          ],
         ),
         child: _isActionLoading
             ? const Center(child: CircularProgressIndicator())
@@ -957,8 +1003,8 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.error,
                             side: const BorderSide(color: AppColors.error),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           icon: const Icon(Icons.close_rounded, size: 18),
                           label: const Text('Forward to Admin', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -971,8 +1017,8 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                           onPressed: _showAcceptDialog,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.success,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           icon: const Icon(Icons.check_rounded, size: 18),
                           label: const Text('Accept Case', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -983,12 +1029,12 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                 : isInProgress
                     ? SizedBox(
                         width: double.infinity,
-                        height: 48,
+                        height: 50,
                         child: ElevatedButton.icon(
                           onPressed: _markCompleted,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.success,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           icon: const Icon(Icons.done_all_rounded),
                           label: const Text(
@@ -1015,16 +1061,29 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
     );
   }
 
-  Widget _buildSectionHeader(IconData icon, String title) {
+  Widget _buildSectionHeader(
+    IconData icon,
+    String title, {
+    Color iconColor = AppColors.primary,
+    Color iconBg = AppColors.surfaceBlue,
+  }) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.accent),
-        const SizedBox(width: 8),
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: iconBg,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: iconColor),
+        ),
+        const SizedBox(width: 10),
         Text(
           title,
           style: const TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -1135,7 +1194,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDark,
+                    color: AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.videocam_rounded, color: AppColors.accent),
@@ -1168,7 +1227,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDark,
+                    color: AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.error),

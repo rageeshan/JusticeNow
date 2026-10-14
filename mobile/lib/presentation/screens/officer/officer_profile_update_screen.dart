@@ -163,7 +163,7 @@ class _OfficerProfileUpdateScreenState extends ConsumerState<OfficerProfileUpdat
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Update Profile'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -190,10 +190,10 @@ class _OfficerProfileUpdateScreenState extends ConsumerState<OfficerProfileUpdat
                         height: 76,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.primaryDark,
+                          color: AppColors.accentLight,
                           border: Border.all(color: AppColors.accent, width: 2),
                         ),
-                        child: const Icon(Icons.shield_rounded, color: AppColors.accent, size: 40),
+                        child: const Icon(Icons.shield_rounded, color: AppColors.primary, size: 40),
                       ),
                       const SizedBox(height: 10),
                       const Text(
@@ -333,19 +333,20 @@ class _OfficerProfileUpdateScreenState extends ConsumerState<OfficerProfileUpdat
                   child: ElevatedButton(
                     onPressed: _isSaving ? null : _handleSave,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _isSaving
                         ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child: CircularProgressIndicator(color: AppColors.primaryDark, strokeWidth: 2),
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                           )
                         : const Text(
                             'Save Profile',
                             style: TextStyle(
-                              color: AppColors.primaryDark,
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),

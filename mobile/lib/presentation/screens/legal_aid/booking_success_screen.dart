@@ -25,8 +25,8 @@ class BookingSuccessScreen extends StatelessWidget {
                 height: 90,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.success.withValues(alpha: 0.15),
-                  border: Border.all(color: AppColors.success, width: 2),
+                  color: AppColors.surfaceGreen,
+                  border: Border.all(color: AppColors.borderGreen, width: 2),
                 ),
                 child: const Center(
                   child: Icon(
@@ -57,6 +57,9 @@ class BookingSuccessScreen extends StatelessWidget {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
+                  boxShadow: const [
+                    BoxShadow(color: AppColors.shadow, blurRadius: 10, offset: Offset(0, 3)),
+                  ],
                 ),
                 child: const Column(
                   children: [
@@ -91,8 +94,8 @@ class BookingSuccessScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () => context.go(AppRoutes.myCases),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: AppColors.primaryDark,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),

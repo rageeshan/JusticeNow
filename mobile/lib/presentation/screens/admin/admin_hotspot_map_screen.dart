@@ -322,8 +322,8 @@ class _AdminHotspotMapScreenState extends State<AdminHotspotMapScreen> {
                         _fetchHotspotData();
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: AppColors.primaryDark,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -355,10 +355,11 @@ class _AdminHotspotMapScreenState extends State<AdminHotspotMapScreen> {
             ),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.accent,
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
               surface: AppColors.surface,
+              onSurface: AppColors.textPrimary,
             ),
           ),
           child: child!,
@@ -610,7 +611,7 @@ class _AdminHotspotMapScreenState extends State<AdminHotspotMapScreen> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
+                      color: AppColors.surfaceVariant,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.divider),
                     ),
@@ -767,7 +768,7 @@ class _AdminHotspotMapScreenState extends State<AdminHotspotMapScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Hotspot Detection Map'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -928,12 +929,11 @@ class _AdminHotspotMapScreenState extends State<AdminHotspotMapScreen> {
                         icon: const Icon(Icons.insights_rounded, size: 16),
                         label: Text('Top Hotspots (${_hotspots.length})'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryDark,
-                          foregroundColor: AppColors.accent,
-                          side: const BorderSide(color: AppColors.accent),
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          elevation: 4,
+                          elevation: 3,
                         ),
                       ),
                     ),
@@ -968,7 +968,10 @@ class _AdminHotspotMapScreenState extends State<AdminHotspotMapScreen> {
             : '$catCount Categories';
 
     return Container(
-      color: AppColors.primaryDark,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      ),
       padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
       child: Column(
         children: [
@@ -1348,8 +1351,8 @@ class _AdminHotspotMapScreenState extends State<AdminHotspotMapScreen> {
               icon: const Icon(Icons.visibility_rounded, size: 16),
               label: const Text('View Case Details', style: TextStyle(fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                foregroundColor: AppColors.primaryDark,
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -1383,7 +1386,7 @@ class _AdminHotspotMapScreenState extends State<AdminHotspotMapScreen> {
         ],
       ),
       child: IconButton(
-        icon: Icon(icon, size: 20, color: active ? AppColors.primaryDark : AppColors.textPrimary),
+        icon: Icon(icon, size: 20, color: active ? Colors.white : AppColors.textPrimary),
         tooltip: tooltip,
         onPressed: onTap,
       ),

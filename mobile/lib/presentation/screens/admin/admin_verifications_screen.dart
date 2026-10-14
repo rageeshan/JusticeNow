@@ -96,7 +96,7 @@ class _AdminVerificationsScreenState extends ConsumerState<AdminVerificationsScr
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Account Verification'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -216,6 +216,13 @@ class _AdminVerificationsScreenState extends ConsumerState<AdminVerificationsScr
                                     color: AppColors.surface,
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(color: AppColors.border),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: AppColors.shadow,
+                                        blurRadius: 10,
+                                        offset: Offset(0, 3),
+                                      ),
+                                    ],
                                   ),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
@@ -226,17 +233,19 @@ class _AdminVerificationsScreenState extends ConsumerState<AdminVerificationsScr
                                         Row(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            CircleAvatar(
-                                              radius: 20,
-                                              backgroundColor: isLawyer
-                                                  ? AppColors.accent.withValues(alpha: 0.15)
-                                                  : AppColors.info.withValues(alpha: 0.15),
+                                            Container(
+                                              width: 42,
+                                              height: 42,
+                                              decoration: BoxDecoration(
+                                                color: isLawyer ? AppColors.surfacePurple : AppColors.surfaceBlue,
+                                                shape: BoxShape.circle,
+                                              ),
                                               child: Icon(
                                                 isLawyer
                                                     ? Icons.gavel_rounded
                                                     : Icons.local_police_rounded,
-                                                color: isLawyer ? AppColors.accent : AppColors.info,
-                                                size: 20,
+                                                color: isLawyer ? const Color(0xFF7C3AED) : AppColors.primary,
+                                                size: 22,
                                               ),
                                             ),
                                             const SizedBox(width: 12),
@@ -268,18 +277,16 @@ class _AdminVerificationsScreenState extends ConsumerState<AdminVerificationsScr
                                               padding: const EdgeInsets.symmetric(
                                                   horizontal: 10, vertical: 4),
                                               decoration: BoxDecoration(
-                                                color: (isLawyer ? AppColors.accent : AppColors.info)
-                                                    .withValues(alpha: 0.12),
-                                                borderRadius: BorderRadius.circular(12),
+                                                color: isLawyer ? AppColors.surfacePurple : AppColors.surfaceBlue,
+                                                borderRadius: BorderRadius.circular(8),
                                                 border: Border.all(
-                                                  color: (isLawyer ? AppColors.accent : AppColors.info)
-                                                      .withValues(alpha: 0.3),
+                                                  color: isLawyer ? const Color(0xFFDDD6FE) : AppColors.borderBlue,
                                                 ),
                                               ),
                                               child: Text(
                                                 _roleLabel(role),
                                                 style: TextStyle(
-                                                  color: isLawyer ? AppColors.accent : AppColors.info,
+                                                  color: isLawyer ? const Color(0xFF7C3AED) : AppColors.primary,
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.bold,
                                                 ),
@@ -324,15 +331,14 @@ class _AdminVerificationsScreenState extends ConsumerState<AdminVerificationsScr
                                               icon: const Icon(Icons.visibility_rounded, size: 16),
                                               label: const Text('View Details'),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: AppColors.primaryDark,
-                                                foregroundColor: AppColors.accent,
+                                                backgroundColor: AppColors.accentLight,
+                                                foregroundColor: AppColors.primary,
                                                 minimumSize: Size.zero,
                                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                                 padding: const EdgeInsets.symmetric(
                                                     horizontal: 14, vertical: 8),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius: BorderRadius.circular(10),
-                                                  side: const BorderSide(color: AppColors.accent),
                                                 ),
                                               ),
                                             ),

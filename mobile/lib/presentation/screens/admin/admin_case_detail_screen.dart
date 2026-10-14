@@ -192,8 +192,8 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: AppColors.primaryDark,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -597,7 +597,7 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(refNumber.isNotEmpty ? refNumber : 'Case Details'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -657,15 +657,34 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
                     // ════════════════════════════════════════
                     _buildSectionHeader('SECTION 1 – CITIZEN DETAILS', Icons.person_rounded),
                     const SizedBox(height: 12),
-                    _buildCard([
-                      _buildRowItem('Full Name', citizenName),
-                      _buildRowItem('NIC Number', citizenNIC),
-                      _buildRowItem('Email Address', citizenEmail),
-                      _buildRowItem('Mobile Number', citizenPhone),
-                      _buildRowItem('Gender', citizenGender),
-                      _buildRowItem('Province', citizenProvince),
-                      _buildRowItem('District', citizenDistrict, isLast: true),
-                    ]),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceBlue,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.borderBlue),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppColors.shadow,
+                            blurRadius: 10,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildRowItem('Full Name', citizenName),
+                          _buildRowItem('NIC Number', citizenNIC),
+                          _buildRowItem('Email Address', citizenEmail),
+                          _buildRowItem('Mobile Number', citizenPhone),
+                          _buildRowItem('Gender', citizenGender),
+                          _buildRowItem('Province', citizenProvince),
+                          _buildRowItem('District', citizenDistrict, isLast: true),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 28),
 
                     // ════════════════════════════════════════
@@ -703,12 +722,21 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
                           // Description
                           const Text('Report Description (Full Text)', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                           const SizedBox(height: 6),
-                          Text(
-                            displayedDescription,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 14,
-                              height: 1.5,
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceSubtle,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Text(
+                              displayedDescription,
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 13,
+                                height: 1.55,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -905,14 +933,13 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
                                   ElevatedButton(
                                     onPressed: () => _previewEvidence(dMap),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primaryDark,
-                                      foregroundColor: AppColors.accent,
+                                      backgroundColor: AppColors.surfaceVariant,
+                                      foregroundColor: AppColors.primary,
                                       minimumSize: Size.zero,
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        side: const BorderSide(color: AppColors.accent),
                                       ),
                                     ),
                                     child: const Text('Open', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
@@ -960,8 +987,8 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
                             icon: const Icon(Icons.gavel_rounded, size: 16),
                             label: const Text('Assign to Lawyer', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.accent,
-                              foregroundColor: AppColors.primaryDark,
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
@@ -996,9 +1023,9 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
                           style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryDark,
-                          foregroundColor: AppColors.accent,
-                          side: const BorderSide(color: AppColors.accent, width: 1.2),
+                          backgroundColor: AppColors.accentLight,
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary, width: 1.2),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
@@ -1017,12 +1044,19 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
   Widget _buildSectionHeader(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.accent, size: 18),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceBlue,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 16),
+        ),
         const SizedBox(width: 8),
         Text(
           title,
           style: const TextStyle(
-            color: AppColors.accent,
+            color: AppColors.primary,
             fontSize: 12,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.1,
@@ -1035,11 +1069,18 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
   Widget _buildCard(List<Widget> children) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1095,9 +1136,9 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant.withValues(alpha: 0.5),
+        color: AppColors.surfaceBlue,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
+        border: Border.all(color: AppColors.borderBlue),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1134,14 +1175,14 @@ class _AdminCaseDetailScreenState extends State<AdminCaseDetailScreen> {
                 avatar: Icon(
                   opt['icon'] as IconData,
                   size: 14,
-                  color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+                  color: isSelected ? Colors.white : AppColors.textSecondary,
                 ),
                 label: Text(
                   opt['label'] as String,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                    color: isSelected ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
                 selected: isSelected,

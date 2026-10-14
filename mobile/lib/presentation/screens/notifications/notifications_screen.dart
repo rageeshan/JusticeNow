@@ -91,7 +91,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Notifications'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           if (_notifications.any((n) => n['isRead'] == false))
@@ -192,12 +192,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: isRead ? AppColors.surface : AppColors.surfaceVariant,
-                                borderRadius: BorderRadius.circular(14),
+                                color: isRead ? AppColors.surface : AppColors.surfaceBlue,
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isRead ? AppColors.border : badgeColor.withValues(alpha: 0.5),
+                                  color: isRead ? AppColors.border : AppColors.borderBlue,
                                   width: isRead ? 1 : 1.5,
                                 ),
+                                boxShadow: const [AppColors.cardShadow],
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,11 +207,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   if (incidentTitle != null && incidentTitle.toString().isNotEmpty) ...[
                                     Container(
                                       margin: const EdgeInsets.only(bottom: 12),
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primaryDark.withValues(alpha: 0.6),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+                                        color: isRead ? AppColors.surfaceSubtle : AppColors.surface,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: isRead ? AppColors.border : AppColors.borderBlue,
+                                        ),
                                       ),
                                       child: Row(
                                         children: [
@@ -220,7 +223,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                             child: Text(
                                               incidentTitle.toString(),
                                               style: TextStyle(
-                                                color: badgeColor,
+                                                color: isRead ? AppColors.textPrimary : AppColors.primary,
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -248,9 +251,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      CircleAvatar(
-                                        radius: 18,
-                                        backgroundColor: badgeColor.withValues(alpha: 0.15),
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: badgeColor.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
                                         child: Icon(iconData, color: badgeColor, size: 20),
                                       ),
                                       const SizedBox(width: 12),
@@ -278,8 +285,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         Container(
                                           width: 8,
                                           height: 8,
+                                          margin: const EdgeInsets.only(top: 4),
                                           decoration: BoxDecoration(
-                                            color: badgeColor,
+                                            color: AppColors.primary,
                                             shape: BoxShape.circle,
                                           ),
                                         ),
@@ -311,11 +319,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         icon: const Icon(Icons.person_search_rounded, size: 18),
                                         label: Text(isLawyerDeclined ? 'Find another lawyer' : 'Find a Lawyer'),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.accent,
-                                          foregroundColor: AppColors.primaryDark,
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          backgroundColor: AppColors.primary,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 13),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(12),
                                           ),
                                         ),
                                       ),
@@ -336,10 +344,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         label: const Text('View in History'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.success,
-                                          foregroundColor: AppColors.primaryDark,
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 13),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(12),
                                           ),
                                         ),
                                       ),
@@ -359,11 +367,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         icon: const Icon(Icons.folder_shared_rounded, size: 18),
                                         label: const Text('View Case Request'),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.accent,
-                                          foregroundColor: AppColors.primaryDark,
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          backgroundColor: AppColors.primary,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 13),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(12),
                                           ),
                                         ),
                                       ),
