@@ -297,7 +297,7 @@ class LawyerCasePdfService {
               ),
             );
           }
-          return const pw.SizedBox();
+          return pw.SizedBox();
         },
         footer: (context) {
           return pw.Container(
