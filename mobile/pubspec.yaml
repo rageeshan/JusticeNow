@@ -54,6 +54,8 @@ dependencies:
   equatable: ^2.0.5
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
+  pdf: ^3.13.1
+  printing: ^5.15.1
 
 dev_dependencies:
   flutter_test:

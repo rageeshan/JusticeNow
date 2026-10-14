@@ -94,6 +94,26 @@ class AuthRepository {
     return response.data['data']['user'] as Map<String, dynamic>;
   }
 
+  /// Admin: Get cases formatted for export and PDF reports
+  Future<Map<String, dynamic>> getExportCases({
+    String? timeRange,
+    String? province,
+    String? district,
+    String? status,
+    String? sortBy,
+    String? search,
+  }) async {
+    final response = await _dio.get('/admin/export-cases', queryParameters: {
+      if (timeRange != null && timeRange.isNotEmpty) 'timeRange': timeRange,
+      if (province != null && province.isNotEmpty && province != 'All') 'province': province,
+      if (district != null && district.isNotEmpty && district != 'All') 'district': district,
+      if (status != null && status.isNotEmpty && status != 'all' && status != 'All') 'status': status,
+      if (sortBy != null && sortBy.isNotEmpty) 'sortBy': sortBy,
+      if (search != null && search.isNotEmpty) 'search': search,
+    });
+    return response.data['data'] as Map<String, dynamic>;
+  }
+
   /// Login citizen with email + password
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await _dio.post('/auth/login', data: {

@@ -26,6 +26,7 @@ import '../../presentation/screens/admin/admin_verifications_screen.dart';
 import '../../presentation/screens/admin/admin_user_detail_screen.dart';
 import '../../presentation/screens/admin/admin_case_list_screen.dart';
 import '../../presentation/screens/admin/admin_case_detail_screen.dart';
+import '../../presentation/screens/admin/admin_export_data_screen.dart';
 import '../../presentation/screens/notifications/notifications_screen.dart';
 
 /// Named route constants
@@ -54,6 +55,7 @@ class AppRoutes {
   static const dashboard = '/dashboard';
   static const notifications = '/notifications';
   static const adminDashboard = '/admin/dashboard';
+  static const adminExportData = '/admin/export-data';
   static const adminVerifications = '/admin/verifications';
   static const adminUserDetail = '/admin/verifications/:id';
   static const adminCases = '/admin/cases';
@@ -188,6 +190,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.adminDashboard,
         builder: (context, state) => const AdminDashboardScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.adminExportData,
+        builder: (context, state) => const AdminExportDataScreen(),
       ),
       GoRoute(
         path: AppRoutes.adminVerifications,

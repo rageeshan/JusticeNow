@@ -181,6 +181,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   accentColor: AppColors.warning,
                   onTap: () => context.push(AppRoutes.dashboard),
                 ),
+                const SizedBox(height: 16),
+
+                // ── 4. Big Button: Export Data & PDF Reports ──
+                _AdminBigCard(
+                  title: 'Export Data & PDF Reports',
+                  subtitle: 'Generate and export incident reports to PDF filtered by location, province, date ranges, and citizen demographics',
+                  icon: Icons.picture_as_pdf_rounded,
+                  badgeText: 'PDF Reports',
+                  accentColor: Colors.tealAccent,
+                  onTap: () => context.push(AppRoutes.adminExportData),
+                ),
                 const SizedBox(height: 32),
 
                 // ── Direct Pending List on Dashboard ──

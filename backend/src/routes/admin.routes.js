@@ -7,6 +7,9 @@ const { adminValidators } = require('../utils/validators');
 // All admin routes require authentication and admin role
 router.use(authenticate, authorize('admin'));
 
+// GET   /api/admin/export-cases     — Export cases data filtered by location, province, date ranges
+router.get('/export-cases', adminController.getExportCases);
+
 // GET   /api/admin/users            — List users with optional status/role filters
 router.get('/users', adminController.getUsers);
 
