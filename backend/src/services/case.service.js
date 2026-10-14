@@ -218,6 +218,7 @@ const getCasesByReporter = async (userId, { page = 1, limit = 20 } = {}) => {
       .limit(limit)
       .select('-internalNotes')
       .populate('assignedOfficer', 'profile.fullName profile.phone profile.district email')
+      .populate('assignedLawyer', 'profile.fullName profile.phone profile.courtNumber profile.district profile.province email')
       .populate('evidence'),
     Case.countDocuments(query),
   ]);

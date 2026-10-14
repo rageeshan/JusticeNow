@@ -369,6 +369,7 @@ const getLawyerCases = async (req, res, next) => {
     })
       .sort({ updatedAt: -1, createdAt: -1 })
       .populate('reportedBy', 'profile email role alias')
+      .populate('assignedLawyer', 'profile email')
       .populate('evidence')
       .lean();
 

@@ -58,19 +58,17 @@ const createCase = async (req, res, next) => {
 const getMyCases = async (req, res, next) => {
   try {
     const { page, limit } = req.query;
-    let result = { cases: [], pagination: { total: 0 } };
-    if (req.user?._id) {
-      result = await caseService.getCasesByReporter(req.user._id, {
-        page: parseInt(page) || 1,
-        limit: parseInt(limit) || 20,
-      });
+    if (!req.user?._id) {
+      return sendSuccess(
+        res,
+        { cases: [], pagination: { total: 0, page: 1, limit: 20, pages: 0 } },
+        'Cases retrieved'
+      );
     }
-    if (!result.cases || result.cases.length === 0) {
-      result = await caseService.getCases({
-        page: parseInt(page) || 1,
-        limit: parseInt(limit) || 20,
-      });
-    }
+    const result = await caseService.getCasesByReporter(req.user._id, {
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 20,
+    });
     return sendSuccess(res, result, 'Cases retrieved');
   } catch (err) {
     next(err);
@@ -157,10 +155,13 @@ const getCaseById = async (req, res, next) => {
     const caseDoc = await caseService.getCaseById(req.params.id);
     if (!caseDoc) return sendNotFound(res, 'Case not found');
 
-    const isOwner = caseDoc.reportedBy._id.toString() === req.user._id.toString();
+    const reporterId = caseDoc.reportedBy?._id || caseDoc.reportedBy;
+    const isOwner = reporterId ? reporterId.toString() === req.user._id.toString() : false;
+    const lawyerId = caseDoc.assignedLawyer?._id || caseDoc.assignedLawyer;
+    const isLawyer = lawyerId ? lawyerId.toString() === req.user._id.toString() : false;
     const isStaff = ['police_officer', 'admin'].includes(req.user.role);
 
-    if (!isOwner && !isStaff) {
+    if (!isOwner && !isStaff && !isLawyer) {
       return sendForbidden(res, 'You do not have access to this case');
     }
 

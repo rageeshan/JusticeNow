@@ -6,23 +6,13 @@ import 'officer_cases_provider.dart' show caseRepositoryProvider;
 //  Citizen Cases Provider — live MongoDB database connection
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Returns all cases from MongoDB API
+/// Returns all cases for the authenticated citizen from MongoDB API
 final citizenCasesProvider = FutureProvider<List<CaseModel>>((ref) async {
   final repo = ref.watch(caseRepositoryProvider);
   try {
     final res = await repo.getMyCases(page: 1, limit: 50);
     final rawList = res['cases'] as List?;
-    if (rawList != null && rawList.isNotEmpty) {
-      return rawList
-          .map((e) => CaseModel.fromJson(Map<String, dynamic>.from(e as Map)))
-          .toList();
-    }
-  } catch (_) {}
-
-  try {
-    final res = await repo.getCases(page: 1, limit: 50);
-    final rawList = res['cases'] as List?;
-    if (rawList != null && rawList.isNotEmpty) {
+    if (rawList != null) {
       return rawList
           .map((e) => CaseModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();

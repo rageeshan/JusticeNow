@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/legal_aid_repository.dart';
+import '../../../data/services/lawyer_case_pdf_service.dart';
 import 'lawyer_case_detail_screen.dart';
 
 class CounselCasesScreen extends StatefulWidget {
@@ -462,6 +463,38 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    // Small "Export PDF" icon button
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => LawyerCasePdfService.exportCaseById(caseId, context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.picture_as_pdf_rounded, color: AppColors.accent, size: 14),
+                              SizedBox(width: 3),
+                              Text(
+                                'PDF',
+                                style: TextStyle(
+                                  color: AppColors.accent,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -532,10 +565,11 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 ),
                 const SizedBox(height: 14),
 
-                // Actions: View Details + Mark as Completed
+                // Actions: View Details + Export PDF + Mark as Completed
                 Row(
                   children: [
                     Expanded(
+                      flex: 3,
                       child: OutlinedButton.icon(
                         onPressed: () async {
                           final result = await Navigator.push<bool>(
@@ -546,24 +580,39 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                             _fetchAllCases();
                           }
                         },
-                        icon: const Icon(Icons.visibility_outlined, size: 16),
-                        label: const Text('View Details'),
+                        icon: const Icon(Icons.visibility_outlined, size: 15),
+                        label: const Text('View Details', style: TextStyle(fontSize: 12)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textPrimary,
                           side: const BorderSide(color: AppColors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => LawyerCasePdfService.exportCaseById(caseId, context),
+                      tooltip: 'Export PDF Report',
+                      icon: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.accent, size: 18),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.accent.withValues(alpha: 0.12),
+                        side: BorderSide(color: AppColors.accent.withValues(alpha: 0.3)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.all(10),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
+                      flex: 3,
                       child: ElevatedButton.icon(
                         onPressed: () => _markCompleted(caseId),
-                        icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
-                        label: const Text('Mark Completed'),
+                        icon: const Icon(Icons.check_circle_outline_rounded, size: 15),
+                        label: const Text('Complete', style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.success,
                           foregroundColor: AppColors.primaryDark,
+                          padding: const EdgeInsets.symmetric(vertical: 11),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
@@ -658,6 +707,38 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    // Small "Export PDF" icon button
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => LawyerCasePdfService.exportCaseById(caseId, context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.picture_as_pdf_rounded, color: AppColors.accent, size: 14),
+                              SizedBox(width: 3),
+                              Text(
+                                'PDF',
+                                style: TextStyle(
+                                  color: AppColors.accent,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -685,24 +766,42 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 ),
                 const SizedBox(height: 14),
 
-                // Read-only View Details
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => LawyerCaseDetailScreen(caseId: caseId)),
-                      );
-                    },
-                    icon: const Icon(Icons.visibility_outlined, size: 16),
-                    label: const Text('View Details (Read-only)'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textPrimary,
-                      side: const BorderSide(color: AppColors.border),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                // Actions: View Details + Export PDF
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => LawyerCaseDetailScreen(caseId: caseId)),
+                          );
+                        },
+                        icon: const Icon(Icons.visibility_outlined, size: 16),
+                        label: const Text('View Details'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textPrimary,
+                          side: const BorderSide(color: AppColors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => LawyerCasePdfService.exportCaseById(caseId, context),
+                        icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                        label: const Text('Export PDF'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: AppColors.primaryDark,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

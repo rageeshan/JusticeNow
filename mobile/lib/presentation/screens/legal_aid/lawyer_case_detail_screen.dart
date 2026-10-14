@@ -4,6 +4,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/case_repository.dart';
 import '../../../data/repositories/legal_aid_repository.dart';
+import '../../../data/services/lawyer_case_pdf_service.dart';
 
 class LawyerCaseDetailScreen extends StatefulWidget {
   final String caseId;
@@ -100,6 +101,16 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
         });
       }
     }
+  }
+
+  bool _canExportPdf(Map<String, dynamic>? c) {
+    if (c == null) return false;
+    final status = c['status']?.toString();
+    return status == 'approved_scheduled' ||
+        status == 'in_progress' ||
+        status == 'completed' ||
+        status == 'resolved' ||
+        status == 'closed';
   }
 
   void _previewEvidence(Map<String, dynamic> item) {
@@ -289,6 +300,29 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
         title: const Text('Client Case Request'),
         backgroundColor: AppColors.primaryDark,
         elevation: 0,
+        actions: [
+          if (_canExportPdf(c))
+            Padding(
+              padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  LawyerCasePdfService.exportCaseById(widget.caseId, context);
+                },
+                icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                label: const Text(
+                  'Export PDF',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: AppColors.primaryDark,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
