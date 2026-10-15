@@ -109,17 +109,16 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    isAnonymous: {
+      type: Boolean,
+      default: false,
+    },
+
     // Explicit approval lifecycle tracking
     verificationStatus: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],
       default: 'pending',
-    },
-
-    // Reason provided by admin if account verification is rejected
-    rejectionReason: {
-      type: String,
-      default: null,
     },
 
     isActive: {

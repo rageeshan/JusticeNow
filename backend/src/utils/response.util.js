@@ -33,6 +33,10 @@ const sendForbidden = (res, message = 'Forbidden') => {
   return sendError(res, message, 403);
 };
 
+const sendBadRequest = (res, message = 'Bad request', errors = null, data = null) => {
+  return sendError(res, message, 400, errors, data);
+};
+
 const sendValidationError = (res, errors) => {
   return sendError(res, 'Validation failed', 422, errors);
 };
@@ -41,6 +45,7 @@ module.exports = {
   sendSuccess,
   sendCreated,
   sendError,
+  sendBadRequest,
   sendNotFound,
   sendUnauthorized,
   sendForbidden,
