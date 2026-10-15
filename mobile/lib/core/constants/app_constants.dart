@@ -16,9 +16,7 @@ class AppConstants {
 
     if (configuredUrl.isNotEmpty) return configuredUrl;
 
-    return Platform.isAndroid
-        ? 'http://10.0.2.2:3000/api'
-        : 'http://localhost:3000/api';
+    return 'https://justicenow-rz9m.onrender.com/api';
   }
 
   static String get serverOrigin => baseUrl.replaceAll('/api', '');
