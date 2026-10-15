@@ -50,6 +50,7 @@ class AppConstants {
     'suspect_identified': 'Suspect Identified',
     'referred_to_court': 'Referred to Court',
     'police_declined': 'Police Declined',
+    'pending_reassignment': 'Pending Reassignment',
     'in_progress': 'In Progress',
     'completed': 'Completed',
     'lawyer_declined': 'Lawyer Declined',

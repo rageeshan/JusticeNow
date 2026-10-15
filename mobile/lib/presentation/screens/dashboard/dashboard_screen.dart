@@ -32,36 +32,48 @@ class DashboardScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Total cases card
+              // Total cases card
               _StatCard(
                 label: 'Total Cases',
                 value: data['totalCases'].toString(),
                 icon: Icons.folder_outlined,
-                color: AppColors.info,
+                color: AppColors.primary,
+                bgColor: AppColors.surfaceBlue,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
               Text('Cases by Status',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary)),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      )),
               const SizedBox(height: 12),
 
-              if ((data['byStatus'] as List).isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: const Center(
-                    child: Text('No data available', style: TextStyle(color: AppColors.textMuted)),
-                  ),
-                )
-              else
-                ...(data['byStatus'] as List).map((item) => _StatusBar(
-                      status: item['_id']?.toString() ?? '',
-                      count: (item['count'] as num?)?.toInt() ?? 0,
-                      total: (data['totalCases'] as num?)?.toInt() ?? 1,
-                    )),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: const [AppColors.cardShadow],
+                ),
+                child: (data['byStatus'] as List).isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Text('No data available', style: TextStyle(color: AppColors.textMuted)),
+                        ),
+                      )
+                    : Column(
+                        children: (data['byStatus'] as List)
+                            .map((item) => _StatusBar(
+                                  status: item['_id']?.toString() ?? '',
+                                  count: (item['count'] as num?)?.toInt() ?? 0,
+                                  total: (data['totalCases'] as num?)?.toInt() ?? 1,
+                                ))
+                            .toList(),
+                      ),
+              ),
             ],
           ),
         ),
@@ -75,7 +87,15 @@ class _StatCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
-  const _StatCard({required this.label, required this.value, required this.icon, required this.color});
+  final Color bgColor;
+
+  const _StatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.bgColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -84,22 +104,32 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [AppColors.cardShadow],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: color, size: 24),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: color, size: 26),
           ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value,
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700)),
-              Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
             ],
           ),
         ],
@@ -118,25 +148,31 @@ class _StatusBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final fraction = total > 0 ? count / total : 0.0;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(status, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
-              Text('$count', style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+              Text(
+                status.replaceAll('_', ' ').toUpperCase(),
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              Text(
+                '$count',
+                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: fraction,
               backgroundColor: AppColors.surfaceVariant,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
-              minHeight: 6,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+              minHeight: 8,
             ),
           ),
         ],

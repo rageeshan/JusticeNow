@@ -89,6 +89,7 @@ const caseSchema = new mongoose.Schema(
         'in_progress_police',
         'assigned_to_police',
         'police_declined',
+        'pending_reassignment',
         'suspect_identified',
         'referred_to_court',
         'completed',
@@ -113,6 +114,12 @@ const caseSchema = new mongoose.Schema(
     },
 
     policeDeclineReason: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+
+    policeAcceptNotes: {
       type: String,
       default: null,
       trim: true,

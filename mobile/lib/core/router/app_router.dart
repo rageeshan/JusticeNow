@@ -27,6 +27,7 @@ import '../../presentation/screens/admin/admin_user_detail_screen.dart';
 import '../../presentation/screens/admin/admin_case_list_screen.dart';
 import '../../presentation/screens/admin/admin_case_detail_screen.dart';
 import '../../presentation/screens/admin/admin_export_data_screen.dart';
+import '../../presentation/screens/admin/admin_hotspot_map_screen.dart';
 import '../../presentation/screens/notifications/notifications_screen.dart';
 import '../../presentation/screens/officer/officer_shell_screen.dart';
 import '../../presentation/screens/officer/officer_case_detail_screen.dart';
@@ -65,6 +66,7 @@ class AppRoutes {
   static const adminUserDetail = '/admin/verifications/:id';
   static const adminCases = '/admin/cases';
   static const adminCaseDetail = '/admin/cases/:id';
+  static const adminHotspotMap = '/admin/hotspot-map';
   static const officerHome = '/officer';
   static const officerCases = '/officer/cases';
   static const officerAvailability = '/officer/availability';
@@ -226,6 +228,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           caseId: state.pathParameters['id']!,
           initialCase: state.extra as Map<String, dynamic>?,
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.adminHotspotMap,
+        builder: (context, state) => const AdminHotspotMapScreen(),
       ),
       GoRoute(
         path: AppRoutes.officerHome,

@@ -481,32 +481,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
+                      color: _certificateFile != null ? AppColors.surfaceGreen : AppColors.surfaceSubtle,
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: _certificateFile != null
-                            ? AppColors.success.withValues(alpha: 0.5)
+                            ? AppColors.borderGreen
                             : AppColors.border,
                       ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.workspace_premium_rounded, color: AppColors.accent, size: 20),
-                            SizedBox(width: 8),
-                            Text(
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceBlueMuted,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.workspace_premium_rounded, color: AppColors.primary, size: 20),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
                               'Supreme Court Certificate *',
                               style: TextStyle(
                                 color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         const Text(
                           'Upload photo or PDF copy of your Supreme Court enrollment certificate',
                           style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
@@ -516,8 +523,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceVariant,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.borderGreen),
                             ),
                             child: Row(
                               children: [
@@ -526,7 +534,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 Expanded(
                                   child: Text(
                                     _certificateFileName ?? 'Certificate Attached',
-                                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w500),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -548,6 +556,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           onPressed: _showCertificatePickerOptions,
                           icon: const Icon(Icons.upload_file_rounded),
                           label: Text(_certificateFile == null ? 'Upload Photo / PDF' : 'Change File'),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: AppColors.surface,
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.borderBlue),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
                         ),
                       ],
                     ),
@@ -672,7 +686,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           width: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.2,
-                            color: AppColors.primaryDark,
+                            color: Colors.white,
                           ),
                         )
                       : Text(_selectedRole == 'citizen' ? 'Create Account' : 'Submit for Verification'),
@@ -725,29 +739,50 @@ class _RoleOptionCard extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.accent.withValues(alpha: 0.15) : AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
+            color: isSelected ? AppColors.surfaceBlue : AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isSelected ? AppColors.accent : AppColors.border,
+              color: isSelected ? AppColors.primary : AppColors.border,
               width: isSelected ? 2 : 1,
             ),
+            boxShadow: [
+              if (isSelected)
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                )
+              else
+                const BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                color: isSelected ? AppColors.accent : AppColors.textMuted,
-                size: 24,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.surfaceBlueMuted : AppColors.surfaceVariant,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected ? AppColors.primary : AppColors.textMuted,
+                  size: 20,
+                ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: isSelected ? AppColors.accent : AppColors.textSecondary,
+                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
                   fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 ),
               ),
             ],

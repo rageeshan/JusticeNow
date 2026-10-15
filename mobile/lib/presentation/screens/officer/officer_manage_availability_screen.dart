@@ -233,7 +233,7 @@ class _OfficerManageAvailabilityScreenState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Set Availability'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           PopupMenuButton<String>(
@@ -334,7 +334,7 @@ class _OfficerManageAvailabilityScreenState
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryDark,
+                            color: AppColors.surfaceVariant,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: AppColors.divider),
                           ),
@@ -486,7 +486,7 @@ class _OfficerManageAvailabilityScreenState
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 12, vertical: 8),
                                           decoration: BoxDecoration(
-                                            color: AppColors.primaryDark,
+                                            color: AppColors.surfaceVariant,
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                             border: Border.all(
@@ -676,8 +676,8 @@ class _OfficerManageAvailabilityScreenState
           child: ElevatedButton.icon(
             onPressed: _isSaving ? null : _saveAvailability,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: AppColors.primaryDark,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -688,7 +688,7 @@ class _OfficerManageAvailabilityScreenState
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: AppColors.primaryDark,
+                      color: Colors.white,
                     ),
                   )
                 : const Icon(Icons.save_rounded, size: 20),

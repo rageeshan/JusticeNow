@@ -92,6 +92,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
   Future<void> _showAcceptDialog() async {
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     String? selectedTimeSlot;
+    final notesController = TextEditingController();
 
     // Check if the weekday is marked Unavailable
     bool isDayUnavailable(DateTime dt) {
@@ -158,8 +159,8 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
             return AlertDialog(
               backgroundColor: AppColors.surface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Row(
-                children: const [
+              title: const Row(
+                children: [
                   Icon(Icons.check_circle_outline_rounded, color: AppColors.success),
                   SizedBox(width: 8),
                   Text(
@@ -213,7 +214,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
@@ -278,7 +279,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
@@ -286,7 +287,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                           child: DropdownButton<String>(
                             value: selectedTimeSlot,
                             isExpanded: true,
-                            dropdownColor: AppColors.primaryDark,
+                            dropdownColor: AppColors.surface,
                             items: availableSlots.map((slot) {
                               return DropdownMenuItem(
                                 value: slot,
@@ -309,6 +310,26 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                     ],
                     const SizedBox(height: 14),
 
+                    // Notes (optional)
+                    const Text('Notes (Optional)',
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: notesController,
+                      maxLines: 2,
+                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Will visit location on Monday morning...',
+                        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                        filled: true,
+                        fillColor: AppColors.surfaceVariant,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
+                        contentPadding: const EdgeInsets.all(10),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
                     // Notification Info
                     Container(
                       padding: const EdgeInsets.all(10),
@@ -317,9 +338,9 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
                       ),
-                      child: Row(
+                      child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Icon(Icons.notifications_active_outlined, color: AppColors.info, size: 16),
                           SizedBox(width: 8),
                           Expanded(
@@ -347,7 +368,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                     backgroundColor: AppColors.success,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Confirm & Accept'),
+                  child: const Text('OK'),
                 ),
               ],
             );
@@ -360,10 +381,13 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
       setState(() => _isActionLoading = true);
       try {
         final formattedDateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
-        await _repo.acceptPoliceCase(
-          widget.caseId,
-          startDate: formattedDateStr,
-          startTime: selectedTimeSlot!,
+        await ApiService.instance.client.patch(
+          '/cases/officer/cases/${widget.caseId}/accept',
+          data: {
+            'startDate': formattedDateStr,
+            'startTime': selectedTimeSlot!,
+            'notes': notesController.text.trim(),
+          },
         );
 
         if (mounted) {
@@ -388,84 +412,147 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
 
   /// Reject / Forward Back Flow with required reason
   Future<void> _showRejectDialog() async {
+    String selectedReasonType = 'Not enough evidence';
     final reasonController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.assignment_return_outlined, color: AppColors.error),
-            SizedBox(width: 8),
-            Text(
-              'Forward Back to Admin',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
             children: [
-              const Text(
-                'Please provide a reason for declining. This case will be returned to the admin pool for reassignment.',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: reasonController,
-                maxLines: 3,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-                decoration: const InputDecoration(
-                  hintText: 'Enter reason (e.g. Jurisdiction conflict, heavy caseload, outside division)...',
-                  alignLabelWithHint: true,
-                ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Please enter a decline reason' : null,
+              Icon(Icons.cancel_outlined, color: AppColors.error),
+              SizedBox(width: 8),
+              Text(
+                'Reject Case',
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.pop(ctx, true);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Select a reason for declining. This case will be returned to the admin pool and the citizen will be notified of reassignment.',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+
+                  const Text('Reason Type *',
+                      style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceVariant,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedReasonType,
+                        isExpanded: true,
+                        dropdownColor: AppColors.surface,
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                        items: const [
+                          DropdownMenuItem(value: 'Not enough evidence', child: Text('Not enough evidence')),
+                          DropdownMenuItem(value: 'Need more details', child: Text('Need more details')),
+                          DropdownMenuItem(value: 'Outside my jurisdiction', child: Text('Outside my jurisdiction')),
+                          DropdownMenuItem(value: 'Other', child: Text('Other')),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setDialogState(() => selectedReasonType = val);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  Text(
+                    selectedReasonType == 'Other' ? 'Message (Required for Other) *' : 'Message (Optional)',
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: reasonController,
+                    maxLines: 3,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: selectedReasonType == 'Other'
+                          ? 'Please explain specific reason why you cannot proceed...'
+                          : 'Additional comments or details...',
+                      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      filled: true,
+                      fillColor: AppColors.surfaceVariant,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
+                      contentPadding: const EdgeInsets.all(10),
+                    ),
+                    validator: (v) {
+                      if (selectedReasonType == 'Other' && (v == null || v.trim().isEmpty)) {
+                        return 'Please provide a message when "Other" is selected';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
             ),
-            child: const Text('Send to Admin'),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(ctx, true);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Send'),
+            ),
+          ],
+        ),
       ),
     );
 
-    if (confirmed == true && reasonController.text.trim().isNotEmpty) {
+    if (confirmed == true) {
       setState(() => _isActionLoading = true);
       try {
-        await _repo.rejectPoliceCase(
-          widget.caseId,
-          reason: reasonController.text.trim(),
+        final fullReason = selectedReasonType == 'Other'
+            ? reasonController.text.trim()
+            : reasonController.text.trim().isNotEmpty
+                ? '$selectedReasonType: ${reasonController.text.trim()}'
+                : selectedReasonType;
+
+        await ApiService.instance.client.patch(
+          '/cases/officer/cases/${widget.caseId}/reject',
+          data: {
+            'reason': fullReason,
+            'reasonType': selectedReasonType,
+          },
         );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Case declined and forwarded to Admin for reassignment.'),
-              backgroundColor: AppColors.info,
+              content: Text('Case returned to admin pool. Citizen notified of reassignment.'),
+              backgroundColor: AppColors.warning,
             ),
           );
           Navigator.pop(context, true);
@@ -608,7 +695,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(c['referenceNumber']?.toString() ?? 'Police Case Detail'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -625,25 +712,31 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Case Status Header Card
+              // Case Status Header Card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.divider),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: const [AppColors.cardShadow],
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: isPending
-                            ? AppColors.warning.withValues(alpha: 0.15)
-                            : (isInProgress
-                                ? AppColors.info.withValues(alpha: 0.15)
-                                : AppColors.success.withValues(alpha: 0.15)),
+                            ? AppColors.surfaceAmber
+                            : (isInProgress ? AppColors.surfaceBlue : AppColors.surfaceGreen),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isPending
+                              ? AppColors.borderAmber
+                              : (isInProgress ? AppColors.borderBlue : AppColors.borderGreen),
+                        ),
                       ),
                       child: Icon(
                         isPending
@@ -653,11 +746,11 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                                 : Icons.check_circle_outline_rounded),
                         color: isPending
                             ? AppColors.warning
-                            : (isInProgress ? AppColors.info : AppColors.success),
+                            : (isInProgress ? AppColors.primary : AppColors.success),
                         size: 22,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,13 +763,13 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                                     : 'Investigation Completed'),
                             style: TextStyle(
                               color: isPending
-                                  ? AppColors.warning
-                                  : (isInProgress ? AppColors.info : AppColors.success),
+                                  ? const Color(0xFFB45309)
+                                  : (isInProgress ? AppColors.primary : AppColors.success),
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
                             'Ref: ${c['referenceNumber'] ?? 'N/A'}',
                             style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
@@ -687,20 +780,26 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
 
               // ─────────────────────────────────────────────────────────────
               // Section 1 – Citizen Details
               // ─────────────────────────────────────────────────────────────
-              _buildSectionHeader(Icons.person_rounded, 'Section 1 – Citizen Details'),
+              _buildSectionHeader(
+                Icons.person_rounded,
+                'Section 1 – Citizen Details',
+                iconColor: AppColors.primary,
+                iconBg: AppColors.surfaceBlue,
+              ),
               const SizedBox(height: 10),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.divider),
+                  color: AppColors.surfaceBlue,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.borderBlue),
+                  boxShadow: const [AppColors.cardShadow],
                 ),
                 child: Column(
                   children: [
@@ -714,20 +813,26 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
 
               // ─────────────────────────────────────────────────────────────
               // Section 2 – Report Details
               // ─────────────────────────────────────────────────────────────
-              _buildSectionHeader(Icons.article_rounded, 'Section 2 – Report Details'),
+              _buildSectionHeader(
+                Icons.article_rounded,
+                'Section 2 – Report Details',
+                iconColor: AppColors.accent,
+                iconBg: AppColors.surfaceBlue,
+              ),
               const SizedBox(height: 10),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.divider),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: const [AppColors.cardShadow],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -736,7 +841,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                     _buildDetailRow('Category', category),
                     _buildDetailRow('Incident Date', incidentDate),
                     _buildDetailRow('Incident Location', incidentLocation),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     const Text(
                       'Description',
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
@@ -744,10 +849,11 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                     const SizedBox(height: 6),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryDark,
-                        borderRadius: BorderRadius.circular(10),
+                        color: AppColors.surfaceSubtle,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Text(
                         description,
@@ -757,12 +863,17 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
 
               // ─────────────────────────────────────────────────────────────
               // Section 3 – Evidence
               // ─────────────────────────────────────────────────────────────
-              _buildSectionHeader(Icons.perm_media_rounded, 'Section 3 – Evidence (${evidenceList.length})'),
+              _buildSectionHeader(
+                Icons.perm_media_rounded,
+                'Section 3 – Evidence (${evidenceList.length})',
+                iconColor: const Color(0xFF7C3AED),
+                iconBg: AppColors.surfacePurple,
+              ),
               const SizedBox(height: 10),
               if (evidenceList.isEmpty)
                 Container(
@@ -770,11 +881,12 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.divider),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: const [AppColors.cardShadow],
                   ),
-                  child: Column(
-                    children: const [
+                  child: const Column(
+                    children: [
                       Icon(Icons.perm_media_outlined, color: AppColors.textMuted, size: 36),
                       SizedBox(height: 8),
                       Text('No evidence files uploaded for this case',
@@ -787,34 +899,48 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
 
               // In Progress extra options: Stages & Schedule
               if (isInProgress) ...[
-                const SizedBox(height: 20),
-                _buildSectionHeader(Icons.timeline_rounded, 'Investigation Stages & Status'),
+                const SizedBox(height: 22),
+                _buildSectionHeader(
+                  Icons.timeline_rounded,
+                  'Investigation Stages & Status',
+                  iconColor: AppColors.primary,
+                  iconBg: AppColors.surfaceBlue,
+                ),
                 const SizedBox(height: 10),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.divider),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: const [AppColors.cardShadow],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (c['investigationStartDate'] != null) ...[
-                        Row(
-                          children: [
-                            const Icon(Icons.alarm_on_rounded, color: AppColors.accent, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Scheduled Start: ${_formatDate(c['investigationStartDate'])} • ${c['investigationStartTime'] ?? 'On Duty'}',
-                                style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 13),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceBlue,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderBlue),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.alarm_on_rounded, color: AppColors.primary, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Scheduled Start: ${_formatDate(c['investigationStartDate'])} • ${c['investigationStartTime'] ?? 'On Duty'}',
+                                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        const Divider(color: AppColors.divider, height: 24),
+                        const SizedBox(height: 14),
                       ],
                       const Text(
                         'Update Investigation Stage',
@@ -822,7 +948,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                       ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
-                        value: ['investigating', 'suspect_identified', 'referred_to_court', 'closed'].contains(status)
+                        initialValue: ['investigating', 'suspect_identified', 'referred_to_court', 'closed'].contains(status)
                             ? status
                             : 'investigating',
                         decoration: const InputDecoration(
@@ -856,7 +982,14 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
         padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
           color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.divider)),
+          border: Border(top: BorderSide(color: AppColors.border)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: Offset(0, -3),
+            ),
+          ],
         ),
         child: _isActionLoading
             ? const Center(child: CircularProgressIndicator())
@@ -870,8 +1003,8 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.error,
                             side: const BorderSide(color: AppColors.error),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           icon: const Icon(Icons.close_rounded, size: 18),
                           label: const Text('Forward to Admin', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -884,8 +1017,8 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                           onPressed: _showAcceptDialog,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.success,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           icon: const Icon(Icons.check_rounded, size: 18),
                           label: const Text('Accept Case', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -896,12 +1029,12 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                 : isInProgress
                     ? SizedBox(
                         width: double.infinity,
-                        height: 48,
+                        height: 50,
                         child: ElevatedButton.icon(
                           onPressed: _markCompleted,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.success,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           icon: const Icon(Icons.done_all_rounded),
                           label: const Text(
@@ -912,9 +1045,9 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                       )
                     : Container(
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(Icons.verified_rounded, color: AppColors.success, size: 18),
                             SizedBox(width: 8),
                             Text(
@@ -928,16 +1061,29 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
     );
   }
 
-  Widget _buildSectionHeader(IconData icon, String title) {
+  Widget _buildSectionHeader(
+    IconData icon,
+    String title, {
+    Color iconColor = AppColors.primary,
+    Color iconBg = AppColors.surfaceBlue,
+  }) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.accent),
-        const SizedBox(width: 8),
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: iconBg,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: iconColor),
+        ),
+        const SizedBox(width: 10),
         Text(
           title,
           style: const TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -1048,7 +1194,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDark,
+                    color: AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.videocam_rounded, color: AppColors.accent),
@@ -1081,7 +1227,7 @@ class _OfficerCaseDetailScreenState extends State<OfficerCaseDetailScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDark,
+                    color: AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.error),

@@ -145,8 +145,8 @@ class _SubmitAdScreenState extends State<SubmitAdScreen> {
             actions: [
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
-                  foregroundColor: AppColors.primaryDark,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                 ),
                 onPressed: () {
                   Navigator.of(ctx).pop();
@@ -187,7 +187,7 @@ class _SubmitAdScreenState extends State<SubmitAdScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Submit an Ad'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
       ),
       body: SafeArea(
@@ -198,18 +198,24 @@ class _SubmitAdScreenState extends State<SubmitAdScreen> {
             children: [
               // Top Banner
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
+                  boxShadow: const [AppColors.cardShadow],
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: AppColors.accent.withValues(alpha: 0.15),
-                      child: const Icon(Icons.campaign_rounded, color: AppColors.accent, size: 24),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceGreen,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.borderGreen),
+                      ),
+                      child: const Icon(Icons.campaign_rounded, color: AppColors.success, size: 24),
                     ),
                     const SizedBox(width: 14),
                     const Expanded(
@@ -230,7 +236,7 @@ class _SubmitAdScreenState extends State<SubmitAdScreen> {
                             style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 12,
-                              height: 1.3,
+                              height: 1.35,
                             ),
                           ),
                         ],
@@ -268,14 +274,15 @@ class _SubmitAdScreenState extends State<SubmitAdScreen> {
                   duration: const Duration(milliseconds: 200),
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: _selectedImage != null ? AppColors.surface : AppColors.surfaceSubtle,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: _selectedImage != null
-                          ? AppColors.accent.withValues(alpha: 0.8)
+                          ? AppColors.primary
                           : AppColors.border,
                       width: _selectedImage != null ? 1.5 : 1.2,
                     ),
+                    boxShadow: const [AppColors.cardShadow],
                   ),
                   child: _selectedImage == null
                       ? Padding(
@@ -288,12 +295,12 @@ class _SubmitAdScreenState extends State<SubmitAdScreen> {
                                 height: 72,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.accent.withValues(alpha: 0.12),
-                                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                                  color: AppColors.surfaceBlue,
+                                  border: Border.all(color: AppColors.borderBlue),
                                 ),
                                 child: const Icon(
                                   Icons.add_photo_alternate_rounded,
-                                  color: AppColors.accent,
+                                  color: AppColors.primary,
                                   size: 36,
                                 ),
                               ),
@@ -320,8 +327,8 @@ class _SubmitAdScreenState extends State<SubmitAdScreen> {
                                 icon: const Icon(Icons.file_upload_outlined, size: 18),
                                 label: const Text('Select Image'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.surfaceVariant,
-                                  foregroundColor: AppColors.accent,
+                                  backgroundColor: AppColors.surface,
+                                  foregroundColor: AppColors.primary,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
@@ -418,7 +425,7 @@ class _SubmitAdScreenState extends State<SubmitAdScreen> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryDark),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(Icons.publish_rounded, size: 20),
                   label: Text(
@@ -426,8 +433,8 @@ class _SubmitAdScreenState extends State<SubmitAdScreen> {
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: AppColors.primaryDark,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.3),
                     disabledForegroundColor: AppColors.textMuted,
                     padding: const EdgeInsets.symmetric(vertical: 16),

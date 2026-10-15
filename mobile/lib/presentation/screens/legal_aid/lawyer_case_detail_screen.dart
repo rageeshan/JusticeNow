@@ -4,6 +4,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/case_repository.dart';
 import '../../../data/repositories/legal_aid_repository.dart';
+import '../../../data/services/lawyer_case_pdf_service.dart';
 
 class LawyerCaseDetailScreen extends StatefulWidget {
   final String caseId;
@@ -100,6 +101,16 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
         });
       }
     }
+  }
+
+  bool _canExportPdf(Map<String, dynamic>? c) {
+    if (c == null) return false;
+    final status = c['status']?.toString();
+    return status == 'approved_scheduled' ||
+        status == 'in_progress' ||
+        status == 'completed' ||
+        status == 'resolved' ||
+        status == 'closed';
   }
 
   void _previewEvidence(Map<String, dynamic> item) {
@@ -287,8 +298,31 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Client Case Request'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
+        actions: [
+          if (_canExportPdf(c))
+            Padding(
+              padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  LawyerCasePdfService.exportCaseById(widget.caseId, context);
+                },
+                icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                label: const Text(
+                  'Export PDF',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -337,13 +371,22 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: AppColors.surfaceBlue,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: AppColors.borderBlue),
                   ),
-                  child: Text(
-                    citizenMessage,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.5),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.format_quote_rounded, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          citizenMessage,
+                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, height: 1.5),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -358,6 +401,13 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -382,20 +432,36 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildTranslationBar(originalTitle, originalDescription),
                     _buildRow('Report Title', displayedTitle, isBold: true),
-                    const SizedBox(height: 10),
-                    const Text('Description:', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text(
-                      displayedDescription,
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.5),
-                    ),
                     const SizedBox(height: 12),
+                    const Text('Incident Description:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSubtle,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Text(
+                        displayedDescription,
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, height: 1.5),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
                     const Divider(color: AppColors.border),
                     const SizedBox(height: 8),
                     _buildRow('Category', category),
@@ -471,8 +537,8 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
                               trailing: ElevatedButton(
                                 onPressed: () => _previewEvidence(v as Map<String, dynamic>),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.accent,
-                                  foregroundColor: AppColors.primaryDark,
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
                                   minimumSize: Size.zero,
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 ),
@@ -552,7 +618,7 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
                               label: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.success,
-                                foregroundColor: AppColors.primaryDark,
+                                foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
@@ -942,11 +1008,11 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
-                  foregroundColor: AppColors.primaryDark,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                 ),
                 child: isSubmitting
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryDark))
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Text('OK'),
               ),
             ],
@@ -1047,14 +1113,14 @@ class _LawyerCaseDetailScreenState extends State<LawyerCaseDetailScreen> {
                 avatar: Icon(
                   opt['icon'] as IconData,
                   size: 14,
-                  color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+                  color: isSelected ? Colors.white : AppColors.textSecondary,
                 ),
                 label: Text(
                   opt['label'] as String,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                    color: isSelected ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
                 selected: isSelected,

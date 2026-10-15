@@ -72,6 +72,14 @@ class CaseModel {
   final String? nextStep;
   final DateTime? expectedUpdateBy;
   final bool hasEvidence;
+  final String rawStatus;
+  final String? assignedOfficerName;
+  final String? assignedOfficerPhone;
+  final String? assignedOfficerEmail;
+  final String? assignedOfficerDistrict;
+  final String? investigationStartDate;
+  final String? investigationStartTime;
+  final String? policeAcceptNotes;
 
   const CaseModel({
     required this.id,
@@ -89,6 +97,14 @@ class CaseModel {
     this.nextStep,
     this.expectedUpdateBy,
     this.hasEvidence = false,
+    this.rawStatus = 'submitted',
+    this.assignedOfficerName,
+    this.assignedOfficerPhone,
+    this.assignedOfficerEmail,
+    this.assignedOfficerDistrict,
+    this.investigationStartDate,
+    this.investigationStartTime,
+    this.policeAcceptNotes,
   });
 
   factory CaseModel.fromJson(Map<String, dynamic> json) {
@@ -100,9 +116,11 @@ class CaseModel {
       'evidence_requested' ||
       'awaiting_lawyer_selection' ||
       'legal_action_initiated' ||
+      'assigned_to_police' ||
+      'in_progress_police' ||
       'referred_to_ngo' =>
         CaseStatus.investigating,
-      'resolved' => CaseStatus.resolved,
+      'resolved' || 'completed' => CaseStatus.resolved,
       'closed' || 'rejected' => CaseStatus.closed,
       _ => CaseStatus.submitted,
     };
@@ -162,6 +180,32 @@ class CaseModel {
     final rawEvidence = json['evidence'] as List?;
     final hasEv = rawEvidence != null && rawEvidence.isNotEmpty;
 
+    String? officerName;
+    String? officerPhone;
+    String? officerEmail;
+    String? officerDistrict;
+    if (json['assignedOfficer'] is Map) {
+      final o = json['assignedOfficer'] as Map;
+      officerName = o['name']?.toString() ??
+          (o['profile'] is Map ? o['profile']['fullName']?.toString() : null) ??
+          o['email']?.toString();
+      officerPhone = o['phone']?.toString() ??
+          (o['profile'] is Map ? o['profile']['phone']?.toString() : null);
+      officerEmail = o['email']?.toString();
+      officerDistrict = o['district']?.toString() ??
+          (o['profile'] is Map ? o['profile']['district']?.toString() : null);
+    }
+
+    String? invDate;
+    if (json['investigationStartDate'] != null) {
+      final d = DateTime.tryParse(json['investigationStartDate'].toString());
+      if (d != null) {
+        invDate = '${d.day}/${d.month}/${d.year}';
+      } else {
+        invDate = json['investigationStartDate'].toString();
+      }
+    }
+
     return CaseModel(
       id: json['referenceNumber']?.toString() ?? json['_id']?.toString() ?? '',
       submittedAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
@@ -179,6 +223,14 @@ class CaseModel {
       remarks: remarksList,
       nextStep: json['adminFeedback']?.toString(),
       hasEvidence: hasEv,
+      rawStatus: statusStr,
+      assignedOfficerName: officerName,
+      assignedOfficerPhone: officerPhone,
+      assignedOfficerEmail: officerEmail,
+      assignedOfficerDistrict: officerDistrict,
+      investigationStartDate: invDate,
+      investigationStartTime: json['investigationStartTime']?.toString(),
+      policeAcceptNotes: json['policeAcceptNotes']?.toString(),
     );
   }
 }

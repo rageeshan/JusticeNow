@@ -113,8 +113,8 @@ class RejectedScreen extends StatelessWidget {
                   icon: const Icon(Icons.app_registration_rounded),
                   label: const Text('Back to Register'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: AppColors.primaryDark,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),

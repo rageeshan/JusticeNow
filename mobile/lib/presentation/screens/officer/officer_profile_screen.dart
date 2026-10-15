@@ -20,7 +20,7 @@ class OfficerProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         title: const Text(
           'Officer Credentials',
@@ -49,13 +49,13 @@ class OfficerProfileScreen extends ConsumerWidget {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
+                      color: AppColors.accentLight,
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.accent, width: 2),
                     ),
                     child: const Icon(
                       Icons.shield_rounded,
-                      color: AppColors.accent,
+                      color: AppColors.primary,
                       size: 38,
                     ),
                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/legal_aid_repository.dart';
+import '../../../data/services/lawyer_case_pdf_service.dart';
 import 'lawyer_case_detail_screen.dart';
 
 class CounselCasesScreen extends StatefulWidget {
@@ -99,7 +100,7 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
-              foregroundColor: AppColors.primaryDark,
+              foregroundColor: Colors.white,
             ),
             child: const Text('Mark Completed'),
           ),
@@ -148,7 +149,7 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('View Cases'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -159,9 +160,9 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.accent,
-          labelColor: AppColors.accent,
-          unselectedLabelColor: AppColors.textMuted,
+          indicatorColor: AppColors.primary,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textSecondary,
           indicatorWeight: 3,
           tabs: [
             Tab(
@@ -257,8 +258,15 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.border),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,10 +275,16 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppColors.accent.withValues(alpha: 0.15),
-                      child: const Icon(Icons.person_outline_rounded, color: AppColors.accent, size: 20),
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceBlue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -297,14 +311,14 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.15),
+                        color: AppColors.surfaceAmber,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                        border: Border.all(color: AppColors.borderAmber),
                       ),
                       child: const Text(
                         'New Request',
                         style: TextStyle(
-                          color: AppColors.accent,
+                          color: AppColors.warning,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -353,8 +367,8 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                     icon: const Icon(Icons.visibility_outlined, size: 16),
                     label: const Text('View Details'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                      foregroundColor: AppColors.primaryDark,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
@@ -397,8 +411,15 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,10 +428,16 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppColors.info.withValues(alpha: 0.15),
-                      child: const Icon(Icons.person_outline_rounded, color: AppColors.info, size: 20),
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceBlue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -428,13 +455,13 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              const Icon(Icons.event_available_rounded, size: 14, color: AppColors.info),
+                              const Icon(Icons.event_available_rounded, size: 14, color: AppColors.primary),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   scheduledText,
                                   style: const TextStyle(
-                                    color: AppColors.info,
+                                    color: AppColors.primary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -449,16 +476,48 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.info.withValues(alpha: 0.15),
+                        color: AppColors.surfaceBlue,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.info.withValues(alpha: 0.4)),
+                        border: Border.all(color: AppColors.borderBlue),
                       ),
                       child: const Text(
                         'In Progress',
                         style: TextStyle(
-                          color: AppColors.info,
+                          color: AppColors.primary,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Small "Export PDF" icon button
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => LawyerCasePdfService.exportCaseById(caseId, context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.picture_as_pdf_rounded, color: AppColors.accent, size: 14),
+                              SizedBox(width: 3),
+                              Text(
+                                'PDF',
+                                style: TextStyle(
+                                  color: AppColors.accent,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -493,7 +552,7 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
+                    color: AppColors.surfaceSubtle,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -532,10 +591,11 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 ),
                 const SizedBox(height: 14),
 
-                // Actions: View Details + Mark as Completed
+                // Actions: View Details + Export PDF + Mark as Completed
                 Row(
                   children: [
                     Expanded(
+                      flex: 3,
                       child: OutlinedButton.icon(
                         onPressed: () async {
                           final result = await Navigator.push<bool>(
@@ -546,24 +606,39 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                             _fetchAllCases();
                           }
                         },
-                        icon: const Icon(Icons.visibility_outlined, size: 16),
-                        label: const Text('View Details'),
+                        icon: const Icon(Icons.visibility_outlined, size: 15),
+                        label: const Text('View Details', style: TextStyle(fontSize: 12)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textPrimary,
                           side: const BorderSide(color: AppColors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => LawyerCasePdfService.exportCaseById(caseId, context),
+                      tooltip: 'Export PDF Report',
+                      icon: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.accent, size: 18),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.accent.withValues(alpha: 0.12),
+                        side: BorderSide(color: AppColors.accent.withValues(alpha: 0.3)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.all(10),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
+                      flex: 3,
                       child: ElevatedButton.icon(
                         onPressed: () => _markCompleted(caseId),
-                        icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
-                        label: const Text('Mark Completed'),
+                        icon: const Icon(Icons.check_circle_outline_rounded, size: 15),
+                        label: const Text('Complete', style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.success,
-                          foregroundColor: AppColors.primaryDark,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 11),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
@@ -605,8 +680,15 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.border),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,10 +697,16 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppColors.success.withValues(alpha: 0.15),
-                      child: const Icon(Icons.check_rounded, color: AppColors.success, size: 20),
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceGreen,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.check_rounded, color: AppColors.success, size: 20),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -645,9 +733,9 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.15),
+                        color: AppColors.surfaceGreen,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+                        border: Border.all(color: AppColors.borderGreen),
                       ),
                       child: const Text(
                         'Completed',
@@ -655,6 +743,38 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                           color: AppColors.success,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Small "Export PDF" icon button
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => LawyerCasePdfService.exportCaseById(caseId, context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.picture_as_pdf_rounded, color: AppColors.accent, size: 14),
+                              SizedBox(width: 3),
+                              Text(
+                                'PDF',
+                                style: TextStyle(
+                                  color: AppColors.accent,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -685,24 +805,42 @@ class _CounselCasesScreenState extends State<CounselCasesScreen>
                 ),
                 const SizedBox(height: 14),
 
-                // Read-only View Details
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => LawyerCaseDetailScreen(caseId: caseId)),
-                      );
-                    },
-                    icon: const Icon(Icons.visibility_outlined, size: 16),
-                    label: const Text('View Details (Read-only)'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textPrimary,
-                      side: const BorderSide(color: AppColors.border),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                // Actions: View Details + Export PDF
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => LawyerCaseDetailScreen(caseId: caseId)),
+                          );
+                        },
+                        icon: const Icon(Icons.visibility_outlined, size: 16),
+                        label: const Text('View Details'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textPrimary,
+                          side: const BorderSide(color: AppColors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => LawyerCasePdfService.exportCaseById(caseId, context),
+                        icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                        label: const Text('Export PDF'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

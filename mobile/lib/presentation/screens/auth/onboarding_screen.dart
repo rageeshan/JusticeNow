@@ -29,13 +29,20 @@ class OnboardingScreen extends ConsumerWidget {
                   height: 80,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [AppColors.accent, AppColors.accentLight],
+                      colors: [AppColors.primary, AppColors.accent],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.25),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.balance_rounded, size: 48, color: AppColors.primaryDark),
+                  child: const Icon(Icons.balance_rounded, size: 48, color: Colors.white),
                 ),
               ),
               const SizedBox(height: 32),
@@ -88,7 +95,7 @@ class OnboardingScreen extends ConsumerWidget {
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryDark),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : const Text('Continue Anonymously'),
               ),

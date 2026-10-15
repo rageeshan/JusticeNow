@@ -196,6 +196,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
     final caseId = c['_id'].toString();
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     String? selectedTimeSlot;
+    final notesController = TextEditingController();
 
     // Check if the weekday is marked Unavailable
     bool isDayUnavailable(DateTime dt) {
@@ -262,8 +263,8 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
             return AlertDialog(
               backgroundColor: AppColors.surface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Row(
-                children: const [
+              title: const Row(
+                children: [
                   Icon(Icons.check_circle_outline_rounded, color: AppColors.success),
                   SizedBox(width: 8),
                   Text(
@@ -317,7 +318,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
@@ -382,7 +383,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
@@ -390,7 +391,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                           child: DropdownButton<String>(
                             value: selectedTimeSlot,
                             isExpanded: true,
-                            dropdownColor: AppColors.primaryDark,
+                            dropdownColor: AppColors.surface,
                             items: availableSlots.map((slot) {
                               return DropdownMenuItem(
                                 value: slot,
@@ -413,6 +414,26 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                     ],
                     const SizedBox(height: 14),
 
+                    // Notes (optional)
+                    const Text('Notes (Optional)',
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: notesController,
+                      maxLines: 2,
+                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Will visit location on Monday morning...',
+                        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                        filled: true,
+                        fillColor: AppColors.surfaceVariant,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
+                        contentPadding: const EdgeInsets.all(10),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
                     // Notification Info
                     Container(
                       padding: const EdgeInsets.all(10),
@@ -421,9 +442,9 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
                       ),
-                      child: Row(
+                      child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Icon(Icons.notifications_active_outlined, color: AppColors.info, size: 16),
                           SizedBox(width: 8),
                           Expanded(
@@ -451,7 +472,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                     backgroundColor: AppColors.success,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Confirm & Accept'),
+                  child: const Text('OK'),
                 ),
               ],
             );
@@ -463,10 +484,13 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
     if (confirmed == true && selectedTimeSlot != null) {
       try {
         final formattedDateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
-        await _repo.acceptPoliceCase(
-          caseId,
-          startDate: formattedDateStr,
-          startTime: selectedTimeSlot!,
+        await ApiService.instance.client.patch(
+          '/cases/officer/cases/$caseId/accept',
+          data: {
+            'startDate': formattedDateStr,
+            'startTime': selectedTimeSlot!,
+            'notes': notesController.text.trim(),
+          },
         );
 
         if (mounted) {
@@ -491,78 +515,145 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
   /// Reject / Forward Back Flow with required reason
   Future<void> _showInlineReject(Map<String, dynamic> c) async {
     final caseId = c['_id'].toString();
+    String selectedReasonType = 'Not enough evidence';
     final reasonController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.assignment_return_outlined, color: AppColors.error),
-            SizedBox(width: 8),
-            Text(
-              'Forward Back to Admin',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
             children: [
-              const Text(
-                'Please provide a reason for declining. This case will be returned to the admin pool for reassignment.',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: reasonController,
-                maxLines: 3,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-                decoration: const InputDecoration(
-                  hintText: 'Enter reason (e.g. Jurisdiction conflict, heavy caseload, outside division)...',
-                  alignLabelWithHint: true,
-                ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Please enter a decline reason' : null,
+              Icon(Icons.cancel_outlined, color: AppColors.error),
+              SizedBox(width: 8),
+              Text(
+                'Reject Case',
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.pop(ctx, true);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Select a reason for declining. This case will be returned to the admin pool and the citizen will be notified of reassignment.',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+
+                  const Text('Reason Type *',
+                      style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceVariant,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedReasonType,
+                        isExpanded: true,
+                        dropdownColor: AppColors.surface,
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                        items: const [
+                          DropdownMenuItem(value: 'Not enough evidence', child: Text('Not enough evidence')),
+                          DropdownMenuItem(value: 'Need more details', child: Text('Need more details')),
+                          DropdownMenuItem(value: 'Outside my jurisdiction', child: Text('Outside my jurisdiction')),
+                          DropdownMenuItem(value: 'Other', child: Text('Other')),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setDialogState(() => selectedReasonType = val);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  Text(
+                    selectedReasonType == 'Other' ? 'Message (Required for Other) *' : 'Message (Optional)',
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: reasonController,
+                    maxLines: 3,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: selectedReasonType == 'Other'
+                          ? 'Please explain specific reason why you cannot proceed...'
+                          : 'Additional comments or details...',
+                      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      filled: true,
+                      fillColor: AppColors.surfaceVariant,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
+                      contentPadding: const EdgeInsets.all(10),
+                    ),
+                    validator: (v) {
+                      if (selectedReasonType == 'Other' && (v == null || v.trim().isEmpty)) {
+                        return 'Please provide a message when "Other" is selected';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
             ),
-            child: const Text('Send to Admin'),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(ctx, true);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Send'),
+            ),
+          ],
+        ),
       ),
     );
 
     if (confirmed == true) {
       try {
-        await _repo.rejectPoliceCase(caseId, reason: reasonController.text.trim());
+        final fullReason = selectedReasonType == 'Other'
+            ? reasonController.text.trim()
+            : reasonController.text.trim().isNotEmpty
+                ? '$selectedReasonType: ${reasonController.text.trim()}'
+                : selectedReasonType;
+
+        await ApiService.instance.client.patch(
+          '/cases/officer/cases/$caseId/reject',
+          data: {
+            'reason': fullReason,
+            'reasonType': selectedReasonType,
+          },
+        );
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Case declined and forwarded back to admin.'),
+              content: Text('Case returned to admin pool. Citizen notified of reassignment.'),
               backgroundColor: AppColors.warning,
             ),
           );
@@ -629,7 +720,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                 )
               : null,
           filled: true,
-          fillColor: AppColors.primaryDark,
+          fillColor: AppColors.surface,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -658,7 +749,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('View Cases'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -669,8 +760,8 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.accent,
-          labelColor: AppColors.accent,
+          indicatorColor: AppColors.primary,
+          labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textMuted,
           indicatorWeight: 3,
           tabs: [
@@ -908,14 +999,15 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                       if (updated == true) _fetchAllCases();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
+                      backgroundColor: AppColors.accentLight,
+                      foregroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     child: const Text(
                       'View Details',
                       style: TextStyle(
-                        color: AppColors.primaryDark,
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -1126,7 +1218,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDark,
+                    color: AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.divider),
                   ),
@@ -1172,7 +1264,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.divider),
                         ),
@@ -1182,7 +1274,7 @@ class _OfficerMyCasesScreenState extends State<OfficerMyCasesScreen>
                                 ? currentStatus
                                 : 'investigating',
                             isExpanded: true,
-                            dropdownColor: AppColors.primaryDark,
+                            dropdownColor: AppColors.surface,
                             style: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
                             items: const [
                               DropdownMenuItem(value: 'investigating', child: Text('Investigating')),

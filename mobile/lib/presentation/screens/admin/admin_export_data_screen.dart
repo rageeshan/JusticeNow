@@ -253,7 +253,7 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Export Data & Reports'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -265,14 +265,14 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.surface,
-          border: const Border(top: BorderSide(color: AppColors.border)),
+          border: Border(top: BorderSide(color: AppColors.border)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: AppColors.shadow,
               blurRadius: 10,
-              offset: const Offset(0, -3),
+              offset: Offset(0, -3),
             ),
           ],
         ),
@@ -283,7 +283,7 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryDark),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : const Icon(Icons.picture_as_pdf_rounded, size: 22),
             label: Text(
@@ -291,8 +291,8 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: AppColors.primaryDark,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               disabledBackgroundColor: AppColors.surfaceVariant,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -309,37 +309,42 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
               // Header description card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primaryDark, AppColors.surface],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: const [AppColors.cardShadow],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.analytics_rounded, color: AppColors.accent, size: 22),
-                        const SizedBox(width: 8),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceBlue,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.analytics_rounded, color: AppColors.primary, size: 18),
+                        ),
+                        const SizedBox(width: 10),
                         Text(
                           'DATA EXPORT & PDF GENERATOR',
                           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                color: AppColors.accent,
+                                color: AppColors.primary,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 1.1,
+                                letterSpacing: 0.8,
                               ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     const Text(
                       'Filter cases by locations, provinces, date ranges, and people demographics. Preview matching records live and generate formatted PDF intelligence reports.',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.45),
                     ),
                   ],
                 ),
@@ -348,11 +353,12 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
 
               // Filter Controls Card
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
+                  boxShadow: const [AppColors.cardShadow],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +413,7 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
                               labelStyle: TextStyle(
                                 fontSize: 12,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                                color: isSelected ? Colors.white : AppColors.textPrimary,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -742,8 +748,9 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.border),
+                        boxShadow: const [AppColors.cardShadow],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,26 +760,26 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.accent.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                                  color: AppColors.surfaceBlue,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppColors.borderBlue),
                                 ),
                                 child: Text(
                                   refNum,
                                   style: const TextStyle(
-                                    color: AppColors.accent,
+                                    color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
                                   ),
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: _statusColor(status).withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(6),
+                                  color: _statusColor(status).withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
                                   status.replaceAll('_', ' ').toUpperCase(),
@@ -893,17 +900,26 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [AppColors.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 18),
-          const SizedBox(height: 6),
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(height: 8),
           Text(
             value,
             style: TextStyle(
@@ -915,7 +931,7 @@ class _AdminExportDataScreenState extends ConsumerState<AdminExportDataScreen> {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5),
           ),
         ],
       ),

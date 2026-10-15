@@ -134,7 +134,7 @@ class _LawyerProfileUpdateScreenState extends ConsumerState<LawyerProfileUpdateS
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Update Profile'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
       ),
       body: _isLoading
@@ -151,10 +151,15 @@ class _LawyerProfileUpdateScreenState extends ConsumerState<LawyerProfileUpdateS
                       Center(
                         child: Column(
                           children: [
-                            CircleAvatar(
-                              radius: 42,
-                              backgroundColor: AppColors.accent.withValues(alpha: 0.2),
-                              child: const Icon(Icons.person_rounded, size: 48, color: AppColors.accent),
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: AppColors.surfacePurple,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFFDDD6FE)),
+                              ),
+                              child: const Icon(Icons.person_rounded, size: 44, color: Color(0xFF7C3AED)),
                             ),
                             const SizedBox(height: 12),
                             const Text(
@@ -169,136 +174,151 @@ class _LawyerProfileUpdateScreenState extends ConsumerState<LawyerProfileUpdateS
                           ],
                         ),
                       ),
+                      const SizedBox(height: 24),
+
+                      // Form Card
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                          boxShadow: const [AppColors.cardShadow],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Full Name
+                            const Text('Full Name *', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.primary, size: 20),
+                                filled: true,
+                                fillColor: AppColors.surfaceSubtle,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                              ),
+                              validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your full name' : null,
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Court Number / Bar Roll ID
+                            const Text('Court Number / SC Bar Roll ID', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _courtNumController,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.gavel_rounded, color: AppColors.primary, size: 20),
+                                filled: true,
+                                fillColor: AppColors.surfaceSubtle,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Mobile Phone
+                            const Text('Mobile Number *', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
+                                filled: true,
+                                fillColor: AppColors.surfaceSubtle,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                              ),
+                              validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your phone number' : null,
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Preferred Language
+                            const Text('Preferred Language', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedLanguage,
+                              dropdownColor: AppColors.surface,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.language_rounded, color: AppColors.primary, size: 20),
+                                filled: true,
+                                fillColor: AppColors.surfaceSubtle,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                              ),
+                              items: ['Sinhala', 'Tamil', 'English']
+                                  .map((l) => DropdownMenuItem(value: l, child: Text(l, style: const TextStyle(color: AppColors.textPrimary))))
+                                  .toList(),
+                              onChanged: (val) {
+                                if (val != null) setState(() => _selectedLanguage = val);
+                              },
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Location: Province
+                            const Text('Province', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedProvince,
+                              dropdownColor: AppColors.surface,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.map_outlined, color: AppColors.primary, size: 20),
+                                filled: true,
+                                fillColor: AppColors.surfaceSubtle,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                              ),
+                              items: SriLankaLocations.provinces
+                                  .map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(color: AppColors.textPrimary))))
+                                  .toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    _selectedProvince = val;
+                                    final newDistricts = SriLankaLocations.getDistrictsForProvince(val);
+                                    _selectedDistrict = newDistricts.isNotEmpty ? newDistricts.first : null;
+                                  });
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Location: District
+                            const Text('District', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedDistrict,
+                              dropdownColor: AppColors.surface,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 20),
+                                filled: true,
+                                fillColor: AppColors.surfaceSubtle,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                              ),
+                              items: districts
+                                  .map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(color: AppColors.textPrimary))))
+                                  .toList(),
+                              onChanged: (val) {
+                                if (val != null) setState(() => _selectedDistrict = val);
+                              },
+                            ),
+                            const SizedBox(height: 18),
+
+                            // About Me / Bio
+                            const Text('Professional Bio / About Me', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _aboutController,
+                              maxLines: 4,
+                              decoration: InputDecoration(
+                                hintText: 'Brief introduction, practice areas, courts of practice...',
+                                filled: true,
+                                fillColor: AppColors.surfaceSubtle,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 28),
-
-                      // Full Name
-                      const Text('Full Name *', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.accent, size: 20),
-                          filled: true,
-                          fillColor: AppColors.surface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-                        ),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your full name' : null,
-                      ),
-                      const SizedBox(height: 18),
-
-                      // Court Number / Bar Roll ID
-                      const Text('Court Number / SC Bar Roll ID', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _courtNumController,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.gavel_rounded, color: AppColors.accent, size: 20),
-                          filled: true,
-                          fillColor: AppColors.surface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-
-                      // Mobile Phone
-                      const Text('Mobile Number *', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.accent, size: 20),
-                          filled: true,
-                          fillColor: AppColors.surface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-                        ),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your phone number' : null,
-                      ),
-                      const SizedBox(height: 18),
-
-                      // Preferred Language
-                      const Text('Preferred Language', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: _selectedLanguage,
-                        dropdownColor: AppColors.surface,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.language_rounded, color: AppColors.accent, size: 20),
-                          filled: true,
-                          fillColor: AppColors.surface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-                        ),
-                        items: ['Sinhala', 'Tamil', 'English']
-                            .map((l) => DropdownMenuItem(value: l, child: Text(l, style: const TextStyle(color: AppColors.textPrimary))))
-                            .toList(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => _selectedLanguage = val);
-                        },
-                      ),
-                      const SizedBox(height: 18),
-
-                      // Location: Province
-                      const Text('Province', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: _selectedProvince,
-                        dropdownColor: AppColors.surface,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.map_outlined, color: AppColors.accent, size: 20),
-                          filled: true,
-                          fillColor: AppColors.surface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-                        ),
-                        items: SriLankaLocations.provinces
-                            .map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(color: AppColors.textPrimary))))
-                            .toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() {
-                              _selectedProvince = val;
-                              final newDistricts = SriLankaLocations.getDistrictsForProvince(val);
-                              _selectedDistrict = newDistricts.isNotEmpty ? newDistricts.first : null;
-                            });
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 18),
-
-                      // Location: District
-                      const Text('District', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: _selectedDistrict,
-                        dropdownColor: AppColors.surface,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.accent, size: 20),
-                          filled: true,
-                          fillColor: AppColors.surface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-                        ),
-                        items: districts
-                            .map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(color: AppColors.textPrimary))))
-                            .toList(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => _selectedDistrict = val);
-                        },
-                      ),
-                      const SizedBox(height: 18),
-
-                      // About Me / Bio
-                      const Text('Professional Bio / About Me', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _aboutController,
-                        maxLines: 4,
-                        decoration: InputDecoration(
-                          hintText: 'Brief introduction, practice areas, courts of practice...',
-                          filled: true,
-                          fillColor: AppColors.surface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
 
                       // Save Button
                       SizedBox(
@@ -307,15 +327,15 @@ class _LawyerProfileUpdateScreenState extends ConsumerState<LawyerProfileUpdateS
                         child: ElevatedButton.icon(
                           onPressed: _isSaving ? null : _saveProfile,
                           icon: _isSaving
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryDark))
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                               : const Icon(Icons.check_circle_rounded),
                           label: Text(
                             _isSaving ? 'Saving Changes...' : 'Save Profile Changes',
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accent,
-                            foregroundColor: AppColors.primaryDark,
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),

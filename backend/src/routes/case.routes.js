@@ -39,6 +39,13 @@ router.get('/officer/availability', authorize('police_officer', 'admin'), caseCo
 // PUT   /api/cases/officer/availability   — Update officer availability
 router.put('/officer/availability', authorize('police_officer', 'admin'), caseController.updateOfficerAvailability);
 
+// ── Admin Police Assignment Routes ──
+// GET   /api/cases/:id/officers-available — Available police officers auto-filtered by location
+router.get('/:id/officers-available', authorize('admin'), caseController.getAvailableOfficersForCase);
+
+// PATCH /api/cases/:id/assign-officer     — Assign case to a chosen police officer
+router.patch('/:id/assign-officer', authorize('admin'), caseController.assignOfficerToCase);
+
 // GET  /api/cases/:id        — Owner or staff
 router.get('/:id', caseController.getCaseById);
 

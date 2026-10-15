@@ -169,7 +169,7 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Set Availability'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
           IconButton(
@@ -187,16 +187,19 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
                   // Info banner
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.1),
-                      border: Border(bottom: BorderSide(color: AppColors.border)),
+                      color: AppColors.surfaceBlue,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.borderBlue),
+                      boxShadow: const [AppColors.cardShadow],
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Icon(Icons.info_outline_rounded, color: AppColors.accent, size: 20),
-                        const SizedBox(width: 12),
-                        const Expanded(
+                        Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
+                        SizedBox(width: 12),
+                        Expanded(
                           child: Text(
                             'Define your weekly consultation time slots. Only these slots are shown when scheduling case appointments to prevent double-booking.',
                             style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
@@ -220,14 +223,15 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
 
                         return Container(
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: isUnavailable ? AppColors.surfaceSubtle : AppColors.surface,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isUnavailable
                                   ? AppColors.border
-                                  : AppColors.accent.withValues(alpha: 0.35),
-                              width: 1.2,
+                                  : AppColors.borderBlue,
+                              width: isUnavailable ? 1 : 1.2,
                             ),
+                            boxShadow: const [AppColors.cardShadow],
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
@@ -242,13 +246,13 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
                                       decoration: BoxDecoration(
                                         color: isUnavailable
                                             ? AppColors.surfaceVariant
-                                            : AppColors.accent.withValues(alpha: 0.2),
+                                            : AppColors.surfaceBlue,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         day.substring(0, 3).toUpperCase(),
                                         style: TextStyle(
-                                          color: isUnavailable ? AppColors.textMuted : AppColors.accent,
+                                          color: isUnavailable ? AppColors.textMuted : AppColors.primary,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12,
                                         ),
@@ -320,7 +324,7 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
                                                 child: Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                                   decoration: BoxDecoration(
-                                                    color: AppColors.surfaceVariant,
+                                                    color: AppColors.surfaceSubtle,
                                                     borderRadius: BorderRadius.circular(10),
                                                     border: Border.all(color: AppColors.border),
                                                   ),
@@ -331,7 +335,7 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
                                                         slot['startTime'] ?? '09:00 AM',
                                                         style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
                                                       ),
-                                                      const Icon(Icons.access_time_rounded, size: 16, color: AppColors.accent),
+                                                      const Icon(Icons.access_time_rounded, size: 16, color: AppColors.primary),
                                                     ],
                                                   ),
                                                 ),
@@ -349,7 +353,7 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
                                                 child: Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                                   decoration: BoxDecoration(
-                                                    color: AppColors.surfaceVariant,
+                                                    color: AppColors.surfaceSubtle,
                                                     borderRadius: BorderRadius.circular(10),
                                                     border: Border.all(color: AppColors.border),
                                                   ),
@@ -360,7 +364,7 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
                                                         slot['endTime'] ?? '12:00 PM',
                                                         style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
                                                       ),
-                                                      const Icon(Icons.access_time_rounded, size: 16, color: AppColors.accent),
+                                                      const Icon(Icons.access_time_rounded, size: 16, color: AppColors.primary),
                                                     ],
                                                   ),
                                                 ),
@@ -383,8 +387,8 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
                                     alignment: Alignment.centerLeft,
                                     child: TextButton.icon(
                                       onPressed: () => _addSlot(day),
-                                      icon: const Icon(Icons.add_rounded, size: 18, color: AppColors.accent),
-                                      label: const Text('+ Add slot', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+                                      icon: const Icon(Icons.add_rounded, size: 18, color: AppColors.primary),
+                                      label: const Text('+ Add slot', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
                                       style: TextButton.styleFrom(
                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       ),
@@ -408,9 +412,16 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
                   // Bottom Save Button Bar
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.surface,
                       border: Border(top: BorderSide(color: AppColors.border)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.shadow,
+                          blurRadius: 8,
+                          offset: Offset(0, -3),
+                        ),
+                      ],
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -421,7 +432,7 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryDark),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
                             : const Icon(Icons.save_rounded),
                         label: Text(
@@ -429,8 +440,8 @@ class _ManageAvailabilityScreenState extends State<ManageAvailabilityScreen> {
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: AppColors.primaryDark,
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
