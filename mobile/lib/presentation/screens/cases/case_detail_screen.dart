@@ -1,0 +1,725 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../data/models/case_model.dart';
+import '../../../providers/citizen_cases_provider.dart';
+import '../../widgets/status_badge.dart';
+import '../../widgets/case_timeline_widget.dart';
+import '../../widgets/investigator_remark_card.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Case Detail Screen — Full case view with visual timeline
+// ─────────────────────────────────────────────────────────────────────────────
+
+class CaseDetailScreen extends ConsumerWidget {
+  final String caseId;
+  const CaseDetailScreen({super.key, required this.caseId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final caseAsync = ref.watch(caseDetailProvider(caseId));
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(caseId,
+            style: const TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.copy_outlined),
+            tooltip: 'Copy Case ID',
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: caseId));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Case ID copied to clipboard'),
+                  backgroundColor: AppColors.success,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: caseAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.accent),
+        ),
+        error: (e, _) => _NotFoundState(caseId: caseId),
+        data: (c) {
+          if (c == null) return _NotFoundState(caseId: caseId);
+          return _CaseDetailBody(caseModel: c);
+        },
+      ),
+    );
+  }
+}
+
+class _CaseDetailBody extends StatelessWidget {
+  final CaseModel caseModel;
+  const _CaseDetailBody({required this.caseModel});
+
+  String _formatDate(DateTime d) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${d.day} ${months[d.month - 1]} ${d.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = caseModel;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header card
+          _SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        c.title,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    StatusBadge(status: c.status, large: true),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceBlue,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.borderBlue),
+                  ),
+                  child: Text(
+                    c.categoryLabel,
+                    style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceSubtle,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Text(
+                    c.summary,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 13,
+                      height: 1.6,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Details grid
+          _SectionCard(
+            child: Column(
+              children: [
+                _DetailRow(
+                  icon: Icons.tag_rounded,
+                  label: 'Case ID',
+                  value: c.id,
+                  valueColor: AppColors.accent,
+                ),
+                _Divider(),
+                _DetailRow(
+                  icon: Icons.calendar_today_outlined,
+                  label: 'Incident Date',
+                  value: _formatDate(c.incidentDate),
+                ),
+                _Divider(),
+                _DetailRow(
+                  icon: Icons.location_on_outlined,
+                  label: 'Location',
+                  value: c.location,
+                ),
+                _Divider(),
+                _DetailRow(
+                  icon: Icons.send_outlined,
+                  label: 'Submitted On',
+                  value: _formatDate(c.submittedAt),
+                ),
+                _Divider(),
+                _DetailRow(
+                  icon: c.isAnonymous
+                      ? Icons.visibility_off_outlined
+                      : Icons.person_outline,
+                  label: 'Reported As',
+                  value: c.isAnonymous ? 'Anonymously' : 'Identified',
+                ),
+                _Divider(),
+                _DetailRow(
+                  icon: Icons.attach_file_outlined,
+                  label: 'Evidence',
+                  value: c.hasEvidence ? 'Files attached' : 'No files',
+                  valueColor:
+                      c.hasEvidence ? AppColors.statusResolved : null,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Status description card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _statusBgColor(c.status),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _statusBorderColor(c.status)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(_statusIcon(c.status),
+                    size: 20, color: _statusIconColor(c.status)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Status: ${c.status.label}',
+                        style: TextStyle(
+                          color: _statusIconColor(c.status),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        c.status.description,
+                        style: TextStyle(
+                          color: _statusIconColor(c.status)
+                              .withValues(alpha: 0.8),
+                          fontSize: 13,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── Police officer assignment card
+          if (c.rawStatus == 'in_progress_police' || c.rawStatus == 'assigned_to_police') ...[
+            const _SectionTitle('Assigned Police Department'),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceBlue,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderBlue),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.shadow, blurRadius: 8, offset: Offset(0, 2)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceBlueMuted,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.local_police_rounded, size: 20, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          c.rawStatus == 'in_progress_police'
+                              ? 'Investigation in Progress'
+                              : 'Case Forwarded to Police',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (c.assignedOfficerName != null) ...[
+                    _DetailRow(
+                      icon: Icons.person_pin_rounded,
+                      label: 'Investigating Officer',
+                      value: c.assignedOfficerName!,
+                    ),
+                    if (c.assignedOfficerDistrict != null && c.assignedOfficerDistrict!.isNotEmpty) ...[
+                      _Divider(),
+                      _DetailRow(
+                        icon: Icons.location_city_rounded,
+                        label: 'District',
+                        value: c.assignedOfficerDistrict!,
+                      ),
+                    ],
+                    if (c.investigationStartDate != null) ...[
+                      _Divider(),
+                      _DetailRow(
+                        icon: Icons.event_available_rounded,
+                        label: 'Start Date & Time',
+                        value: '${c.investigationStartDate!} • ${c.investigationStartTime ?? "Duty Hours"}',
+                        valueColor: Colors.indigoAccent,
+                      ),
+                    ],
+                    if (c.assignedOfficerPhone != null && c.assignedOfficerPhone!.isNotEmpty) ...[
+                      _Divider(),
+                      _DetailRow(
+                        icon: Icons.phone_outlined,
+                        label: 'Officer Contact',
+                        value: c.assignedOfficerPhone!,
+                      ),
+                    ],
+                    if (c.assignedOfficerEmail != null && c.assignedOfficerEmail!.isNotEmpty) ...[
+                      _Divider(),
+                      _DetailRow(
+                        icon: Icons.email_outlined,
+                        label: 'Officer Email',
+                        value: c.assignedOfficerEmail!,
+                      ),
+                    ],
+                    if (c.policeAcceptNotes != null && c.policeAcceptNotes!.isNotEmpty) ...[
+                      _Divider(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Officer Notes',
+                              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              c.policeAcceptNotes!,
+                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontStyle: FontStyle.italic),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ] else ...[
+                    const Text(
+                      'Your case has been forwarded to the local police department. An assigned officer is reviewing your report details.',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          if (c.rawStatus == 'pending_reassignment') ...[
+            const _SectionTitle('Case Reassignment'),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.sync_problem_rounded, size: 20, color: Colors.orangeAccent),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'The previously assigned officer could not proceed with this case. It has been queued for immediate reassignment by our administrators.',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // ── Next step card
+          if (c.nextStep != null) ...[
+            const _SectionTitle('Expected Next Step'),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceBlue,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderBlue),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.shadow, blurRadius: 8, offset: Offset(0, 2)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceBlueMuted,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.navigate_next_rounded,
+                            size: 18, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('What to expect next',
+                          style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    c.nextStep!,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      height: 1.6,
+                    ),
+                  ),
+                  if (c.expectedUpdateBy != null) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(Icons.schedule_outlined,
+                            size: 14, color: AppColors.accent),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Expected update by: ${_formatDate(c.expectedUpdateBy!)}',
+                          style: const TextStyle(
+                              color: AppColors.accent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // ── Investigation timeline
+          const _SectionTitle('Investigation Timeline'),
+          const SizedBox(height: 12),
+          _SectionCard(
+            child: CaseTimelineWidget(events: c.timeline),
+          ),
+          const SizedBox(height: 20),
+
+          // ── Investigator remarks
+          if (c.remarks.isNotEmpty) ...[
+            const _SectionTitle('Updates from Our Team'),
+            const SizedBox(height: 4),
+            const Text(
+              'Messages from the case team. Officer identities are kept confidential for their safety.',
+              style:
+                  TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            ...c.remarks.map((r) => InvestigatorRemarkCard(remark: r)),
+            const SizedBox(height: 8),
+          ],
+
+          // ── Contact / support
+          _SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.support_agent_outlined,
+                        size: 18, color: AppColors.accent),
+                    SizedBox(width: 8),
+                    Text('Need help with your case?',
+                        style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'If you have new information, feel unsafe, or need to update your case, you can contact the support team.',
+                  style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      height: 1.5),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                              '⚠ Support contact is not available in this demo.'),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.mail_outline_rounded),
+                    label: const Text('Contact Support Team'),
+                    style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 46)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Privacy footer
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.lock_outline,
+                        size: 14, color: AppColors.textMuted),
+                    SizedBox(width: 6),
+                    Text('Privacy & Security',
+                        style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5)),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'All case data is encrypted and stored securely. Access is restricted to trained case officers only. Your information is never shared with the media, government agencies, or third parties without your explicit consent.',
+                  style: TextStyle(
+                      color: AppColors.textMuted, fontSize: 12, height: 1.55),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _statusBgColor(CaseStatus s) => switch (s) {
+        CaseStatus.submitted => AppColors.surfaceVariant,
+        CaseStatus.underReview => AppColors.surfaceBlue,
+        CaseStatus.investigating => AppColors.surfaceAmber,
+        CaseStatus.resolved => AppColors.surfaceGreen,
+        CaseStatus.closed => AppColors.surfaceVariant,
+      };
+
+  Color _statusBorderColor(CaseStatus s) => switch (s) {
+        CaseStatus.submitted => AppColors.border,
+        CaseStatus.underReview => AppColors.borderBlue,
+        CaseStatus.investigating => AppColors.borderAmber,
+        CaseStatus.resolved => AppColors.borderGreen,
+        CaseStatus.closed => AppColors.border,
+      };
+
+  Color _statusIconColor(CaseStatus s) => switch (s) {
+        CaseStatus.submitted => AppColors.statusSubmitted,
+        CaseStatus.underReview => AppColors.primary,
+        CaseStatus.investigating => AppColors.warning,
+        CaseStatus.resolved => AppColors.success,
+        CaseStatus.closed => AppColors.statusClosed,
+      };
+
+  IconData _statusIcon(CaseStatus s) => switch (s) {
+        CaseStatus.submitted => Icons.inbox_outlined,
+        CaseStatus.underReview => Icons.manage_search_outlined,
+        CaseStatus.investigating => Icons.policy_outlined,
+        CaseStatus.resolved => Icons.check_circle_outline,
+        CaseStatus.closed => Icons.archive_outlined,
+      };
+}
+
+// ── Reusable sub-widgets
+
+class _SectionCard extends StatelessWidget {
+  final Widget child;
+  const _SectionCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: const TextStyle(
+        color: AppColors.textMuted,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+  const _DetailRow(
+      {required this.icon,
+      required this.label,
+      required this.value,
+      this.valueColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: AppColors.primary),
+          ),
+          const SizedBox(width: 12),
+          Text(label,
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500)),
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor ?? AppColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 1, color: AppColors.divider);
+  }
+}
+
+// ── Not found state
+class _NotFoundState extends StatelessWidget {
+  final String caseId;
+  const _NotFoundState({required this.caseId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.search_off_rounded,
+                size: 64, color: AppColors.textMuted),
+            const SizedBox(height: 16),
+            Text('Case not found',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: 8),
+            Text(
+              'We could not find case "$caseId". Please check the ID and try again.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  color: AppColors.textMuted, fontSize: 14, height: 1.5),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Go Back'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
